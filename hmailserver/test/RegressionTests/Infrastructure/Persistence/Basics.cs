@@ -55,11 +55,11 @@ namespace RegressionTests.Infrastructure.Persistence
       {
          Account testAccount = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "lowercase@test.com", "test");
 
-         var oSMTP = new SMTPClientSimulator();
+         var smtpClientSimulator = new SmtpClientSimulator();
          string upperCase = testAccount.Address.ToUpper();
-         CustomAssert.IsTrue(oSMTP.Send("someone@dummy-example.com", upperCase, "test mail", "test body"));
+         smtpClientSimulator.Send("someone@dummy-example.com", upperCase, "test mail", "test body");
 
-         POP3ClientSimulator.AssertMessageCount("lowercase@test.com", "test", 1);
+         Pop3ClientSimulator.AssertMessageCount("lowercase@test.com", "test", 1);
       }
 
       [Test]
@@ -69,11 +69,11 @@ namespace RegressionTests.Infrastructure.Persistence
          Alias testAlias = SingletonProvider<TestSetup>.Instance.AddAlias(_domain, "sometext@test.com",
                                                                           "LowerCase@test.com");
 
-         var oSMTP = new SMTPClientSimulator();
+         var smtpClientSimulator = new SmtpClientSimulator();
          string upperCase = testAlias.Name.ToUpper();
-         CustomAssert.IsTrue(oSMTP.Send("someone@dummy-example.com", upperCase, "test mail", "test body"));
+         smtpClientSimulator.Send("someone@dummy-example.com", upperCase, "test mail", "test body");
 
-         POP3ClientSimulator.AssertMessageCount("lowercase@test.com", "test", 1);
+         Pop3ClientSimulator.AssertMessageCount("lowercase@test.com", "test", 1);
       }
 
       [Test]
@@ -87,11 +87,11 @@ namespace RegressionTests.Infrastructure.Persistence
          DistributionList list = SingletonProvider<TestSetup>.Instance.AddDistributionList(_domain, "myList@test.com",
                                                                                            recipients);
 
-         var oSMTP = new SMTPClientSimulator();
+         var smtpClientSimulator = new SmtpClientSimulator();
          string upperCase = list.Address.ToUpper();
-         CustomAssert.IsTrue(oSMTP.Send("someone@dummy-example.com", upperCase, "test mail", "test body"));
+         smtpClientSimulator.Send("someone@dummy-example.com", upperCase, "test mail", "test body");
 
-         POP3ClientSimulator.AssertMessageCount("lowercase@test.com", "test", 1);
+         Pop3ClientSimulator.AssertMessageCount("lowercase@test.com", "test", 1);
       }
 
       [Test]
@@ -181,18 +181,18 @@ namespace RegressionTests.Infrastructure.Persistence
          _domain.Name = "test3.com";
          _domain.Save();
 
-         CustomAssert.IsNotNull(_domain.Accounts.get_ItemByAddress("test1@test3.com"));
-         CustomAssert.IsNotNull(_domain.Accounts.get_ItemByAddress("test2@test3.com"));
-         CustomAssert.IsNotNull(_domain.Accounts.get_ItemByAddress("test3@test3.com"));
-         CustomAssert.IsNotNull(_domain.Accounts.get_ItemByAddress("test2.com@test3.com"));
+         Assert.IsNotNull(_domain.Accounts.get_ItemByAddress("test1@test3.com"));
+         Assert.IsNotNull(_domain.Accounts.get_ItemByAddress("test2@test3.com"));
+         Assert.IsNotNull(_domain.Accounts.get_ItemByAddress("test3@test3.com"));
+         Assert.IsNotNull(_domain.Accounts.get_ItemByAddress("test2.com@test3.com"));
 
-         CustomAssert.IsNotNull(_domain.Aliases.get_ItemByName("alias1@test3.com"));
-         CustomAssert.IsNotNull(_domain.Aliases.get_ItemByName("alias2@test3.com"));
-         CustomAssert.IsNotNull(_domain.Aliases.get_ItemByName("alias3@test3.com"));
+         Assert.IsNotNull(_domain.Aliases.get_ItemByName("alias1@test3.com"));
+         Assert.IsNotNull(_domain.Aliases.get_ItemByName("alias2@test3.com"));
+         Assert.IsNotNull(_domain.Aliases.get_ItemByName("alias3@test3.com"));
 
-         CustomAssert.IsNotNull(_domain.DistributionLists.get_ItemByAddress("list1@test3.com"));
-         CustomAssert.IsNotNull(_domain.DistributionLists.get_ItemByAddress("list2@test3.com"));
-         CustomAssert.IsNotNull(_domain.DistributionLists.get_ItemByAddress("list3@test3.com"));
+         Assert.IsNotNull(_domain.DistributionLists.get_ItemByAddress("list1@test3.com"));
+         Assert.IsNotNull(_domain.DistributionLists.get_ItemByAddress("list2@test3.com"));
+         Assert.IsNotNull(_domain.DistributionLists.get_ItemByAddress("list3@test3.com"));
       }
 
 
@@ -211,7 +211,7 @@ namespace RegressionTests.Infrastructure.Persistence
          secondAccount.MaxSize = 1024*1024*2000;
          secondAccount.Save();
 
-         CustomAssert.AreEqual(account.MaxSize + (long) secondAccount.MaxSize, domain.AllocatedSize);
+         Assert.AreEqual(account.MaxSize + (long) secondAccount.MaxSize, domain.AllocatedSize);
       }
 
       [Test]
@@ -270,7 +270,7 @@ namespace RegressionTests.Infrastructure.Persistence
       public void TestIncomingRelays()
       {
          IncomingRelays incomingRelays = _application.Settings.IncomingRelays;
-         CustomAssert.AreEqual(0, incomingRelays.Count);
+         Assert.AreEqual(0, incomingRelays.Count);
 
          IncomingRelay incomingRelay = incomingRelays.Add();
          incomingRelay.Name = "TestRelay";
@@ -279,30 +279,30 @@ namespace RegressionTests.Infrastructure.Persistence
          incomingRelay.Save();
 
          // Check that it was saved.
-         CustomAssert.AreNotEqual(0, incomingRelay.ID);
+         Assert.AreNotEqual(0, incomingRelay.ID);
 
          // Confirm that settings were saved properly.
          incomingRelays.Refresh();
          IncomingRelay incomingRelay2 = incomingRelays.get_ItemByDBID(incomingRelay.ID);
-         CustomAssert.AreEqual(incomingRelay.ID, incomingRelay2.ID);
-         CustomAssert.AreEqual(incomingRelay.Name, incomingRelay2.Name);
-         CustomAssert.AreEqual(incomingRelay.LowerIP, incomingRelay2.LowerIP);
-         CustomAssert.AreEqual(incomingRelay.UpperIP, incomingRelay2.UpperIP);
+         Assert.AreEqual(incomingRelay.ID, incomingRelay2.ID);
+         Assert.AreEqual(incomingRelay.Name, incomingRelay2.Name);
+         Assert.AreEqual(incomingRelay.LowerIP, incomingRelay2.LowerIP);
+         Assert.AreEqual(incomingRelay.UpperIP, incomingRelay2.UpperIP);
 
          // Delete it again.
          incomingRelays.Delete(0);
 
-         CustomAssert.AreEqual(0, incomingRelays.Count);
+         Assert.AreEqual(0, incomingRelays.Count);
       }
 
       [Test]
       public void TestRenameAccountOrDomainWithMessagesWithFullPath()
       {
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
-         SMTPClientSimulator.StaticSend(account.Address, account.Address, "Test message", "Test body");
+         SmtpClientSimulator.StaticSend(account.Address, account.Address, "Test message", "Test body");
 
          IMAPFolder folder = account.IMAPFolders.get_ItemByName("Inbox");
-         TestSetup.AssertFolderMessageCount(folder, 1);
+         CustomAsserts.AssertFolderMessageCount(folder, 1);
          Message message = account.IMAPFolders.get_ItemByName("Inbox").Messages[0];
 
          // Move the message file to another folder.
@@ -329,7 +329,7 @@ namespace RegressionTests.Infrastructure.Persistence
             thrown = true;
          }
 
-         CustomAssert.IsTrue(thrown);
+         Assert.IsTrue(thrown);
 
          // Saving account is OK, unless its address is changed.
          account.Address = "test@test.com";
@@ -348,7 +348,7 @@ namespace RegressionTests.Infrastructure.Persistence
             thrown = true;
          }
 
-         CustomAssert.IsTrue(thrown);
+         Assert.IsTrue(thrown);
 
          // Saving domain is OK, unless its address is changed.
          _domain.Name = "test.com";
@@ -361,14 +361,14 @@ namespace RegressionTests.Infrastructure.Persistence
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "account1@test.com", "test");
 
          string messageBody = Guid.NewGuid().ToString();
-         SMTPClientSimulator.StaticSend(account.Address, account.Address, "Subj", messageBody);
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         SmtpClientSimulator.StaticSend(account.Address, account.Address, "Subj", messageBody);
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
          account.Address = "account2@test.com";
          account.Save();
 
-         string messageText = POP3ClientSimulator.AssertGetFirstMessageText("account2@test.com", "test");
-         CustomAssert.IsTrue(messageText.Contains(messageBody), messageText);
+         string messageText = Pop3ClientSimulator.AssertGetFirstMessageText("account2@test.com", "test");
+         Assert.IsTrue(messageText.Contains(messageBody), messageText);
       }
 
       [Test]
@@ -386,8 +386,8 @@ namespace RegressionTests.Infrastructure.Persistence
          _domain.Name = "example.com";
          _domain.Save();
 
-         CustomAssert.AreEqual("someone@example.com", _domain.Accounts[0].ForwardAddress);
-         CustomAssert.AreEqual("someone@external.com", _domain.Accounts[1].ForwardAddress);
+         Assert.AreEqual("someone@example.com", _domain.Accounts[0].ForwardAddress);
+         Assert.AreEqual("someone@external.com", _domain.Accounts[1].ForwardAddress);
       }
 
       [Test]
@@ -412,14 +412,14 @@ namespace RegressionTests.Infrastructure.Persistence
          _domain.Name = "example.com";
          _domain.Save();
 
-         CustomAssert.AreEqual("alias1@example.com", _domain.Aliases[0].Name);
-         CustomAssert.AreEqual("alias2@example.com", _domain.Aliases[0].Value);
+         Assert.AreEqual("alias1@example.com", _domain.Aliases[0].Name);
+         Assert.AreEqual("alias2@example.com", _domain.Aliases[0].Value);
 
-         CustomAssert.AreEqual("alias2@example.com", _domain.Aliases[1].Name);
-         CustomAssert.AreEqual("account@example.com", _domain.Aliases[1].Value);
+         Assert.AreEqual("alias2@example.com", _domain.Aliases[1].Name);
+         Assert.AreEqual("account@example.com", _domain.Aliases[1].Value);
 
-         CustomAssert.AreEqual("alias3@example.com", _domain.Aliases[2].Name);
-         CustomAssert.AreEqual("external@external.com", _domain.Aliases[2].Value);
+         Assert.AreEqual("alias3@example.com", _domain.Aliases[2].Name);
+         Assert.AreEqual("external@external.com", _domain.Aliases[2].Value);
       }
 
       [Test]
@@ -447,10 +447,10 @@ namespace RegressionTests.Infrastructure.Persistence
          _domain.Save();
 
          DistributionList list = _domain.DistributionLists[0];
-         CustomAssert.AreEqual("list@example.com", list.Address);
-         CustomAssert.AreEqual("recipient1@example.com", list.Recipients[0].RecipientAddress);
-         CustomAssert.AreEqual("recipient2@example.com", list.Recipients[1].RecipientAddress);
-         CustomAssert.AreEqual("recipient3@otherdomain.com", list.Recipients[2].RecipientAddress);
+         Assert.AreEqual("list@example.com", list.Address);
+         Assert.AreEqual("recipient1@example.com", list.Recipients[0].RecipientAddress);
+         Assert.AreEqual("recipient2@example.com", list.Recipients[1].RecipientAddress);
+         Assert.AreEqual("recipient3@otherdomain.com", list.Recipients[2].RecipientAddress);
       }
 
       [Test]
@@ -461,14 +461,14 @@ namespace RegressionTests.Infrastructure.Persistence
          account.Save();
 
          string messageBody = Guid.NewGuid().ToString();
-         SMTPClientSimulator.StaticSend(account.Address, account.Address, "Subj", messageBody);
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         SmtpClientSimulator.StaticSend(account.Address, account.Address, "Subj", messageBody);
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
          _domain.Name = "example.com";
          _domain.Save();
 
-         string messageText = POP3ClientSimulator.AssertGetFirstMessageText("account1@example.com", "test");
-         CustomAssert.IsTrue(messageText.Contains(messageBody), messageText);
+         string messageText = Pop3ClientSimulator.AssertGetFirstMessageText("account1@example.com", "test");
+         Assert.IsTrue(messageText.Contains(messageBody), messageText);
       }
 
       [Test]

@@ -10,15 +10,6 @@ namespace RegressionTests.Infrastructure
    [TestFixture]
    public class ExceptionHandlerTests : TestFixtureBase
    {
-      [DllImport("kernel32")]
-      static extern long WritePrivateProfileString(string Section, string Key, string Value, string FilePath);
-
-      [TestFixtureTearDown]
-      public void TestFixtureTearDown()
-      {
-         SetCrashSimulationMode(0);
-      }
-
       [SetUp]
       public new void SetUp()
       {
@@ -27,18 +18,12 @@ namespace RegressionTests.Infrastructure
          {
             Assert.Pass("This functionality is not supported on Windows 2000.");
          }
-
-         DeleteAllMinidumps();
       }
 
       [TearDown]
-      public void TearDown()
+      public new void TearDown()
       {
-         RetryHelper.TryAction(TimeSpan.FromSeconds(5), () =>
-            {
-               TestSetup.DeleteErrorLog();
-               DeleteAllMinidumps();
-            });
+         _settings.CrashSimulationMode = 0;
       }
 
       private void DeleteAllMinidumps()
@@ -60,85 +45,81 @@ namespace RegressionTests.Infrastructure
       [Test]
       public void HelpShouldNotResultInErrorIfCrashSimulationDisabled()
       {
-         SetCrashSimulationMode(0);
+         _settings.CrashSimulationMode = 0;
 
          TriggerCrashSimulationError();
 
-         TestSetup.AssertNoReportedError();
-
-         AssertMinidumpCount(0);
+         AssertMinidumpsGeneratedAndErrorsLogged(0, false);
       }
 
       [Test]
       public void ThrowIntShouldResultInErrorDump()
       {
-         SetCrashSimulationMode(1);
+         _settings.CrashSimulationMode = 1;
 
          TriggerCrashSimulationError();
 
-         TestSetup.AssertReportedError("Description: An error occured while parsing data.",
-                                       "An error occured while executing 'IOCPQueueWorkerTask'",
-                                       "An error has been detected. A mini dump has been written");
-
-         AssertMinidumpCount(1);
+         AssertMinidumpsGeneratedAndErrorsLogged(1, true,
+            "Description: An error occured while parsing data.",
+            "An error occured while executing 'IOCPQueueWorkerTask'",
+            "An error has been detected. A mini dump has been written");
       }
 
 
       [Test]
       public void ThrowLogicErrorShouldResultInErrorDump()
       {
-         SetCrashSimulationMode(2);
+         _settings.CrashSimulationMode = 2;
 
          TriggerCrashSimulationError();
+         AssertMinidumpsGeneratedAndErrorsLogged(1, true, "Message: Crash simulation test");
 
-         TestSetup.AssertReportedError("Message: Crash simulation test");
-
-         AssertMinidumpCount(1);
+         
       }
 
       [Test]
       public void AccessViolationShouldResultInErrorDump()
       {
-         SetCrashSimulationMode(3);
+         _settings.CrashSimulationMode = 3;
 
          TriggerCrashSimulationError();
-
-         TestSetup.AssertReportedError("An error has been detected. A mini dump has been written");
-
-         AssertMinidumpCount(1);
+  
+         AssertMinidumpsGeneratedAndErrorsLogged(1, true,
+            "An error has been detected. A mini dump has been written");
       }
 
       [Test]
       public void DisconnectedExceptionShouldNotExitRunningThreads()
       {
-         SetCrashSimulationMode(4);
+         _settings.CrashSimulationMode = 4;
 
          for (int i = 0; i < 20; i++)
          {
-            TriggerCrashSimulationError();
-            TestSetup.AssertNoReportedError();
+            TriggerCrashSimulationError();   
          }
 
-         var defaultLog = TestSetup.ReadCurrentDefaultLog();
-         CustomAssert.IsTrue(defaultLog.Contains("Connection was terminated - Client is disconnected."));
+         AssertMinidumpsGeneratedAndErrorsLogged(0, false);
+
+         var defaultLog = LogHandler.ReadCurrentDefaultLog();
+         Assert.IsTrue(defaultLog.Contains("Connection was terminated - Client is disconnected."));
       }
 
       [Test]
       public void AtMost10MinidumpsAreGenerated()
       {
-         SetCrashSimulationMode(3);
+         _settings.CrashSimulationMode = 3;
 
          // 11 errors triggered, but only 10 should generate minidumps.
          for (int i = 1; i <= 11; i++)
             TriggerCrashSimulationError();
 
-         AssertMinidumpCount(10);
+         AssertMinidumpsGeneratedAndErrorsLogged(10, false);
 
          // We should log info that we skipped minidump generation.
          RetryHelper.TryAction(TimeSpan.FromSeconds(5), () =>
             {
-               var log = TestSetup.ReadCurrentDefaultLog();
-               CustomAssert.IsTrue(log.Contains("Minidump creation aborted. The max count (10) is reached and no log is older than 4 hours."));
+               var log = LogHandler.ReadCurrentDefaultLog();
+               Assert.IsTrue(log.Contains("Minidump creation aborted. The max count (10) is reached and no log is older than 4 hours."));
             });
 
 
@@ -149,27 +130,25 @@ namespace RegressionTests.Infrastructure
          // Now we should be able to create another.
          TriggerCrashSimulationError();
 
-         AssertMinidumpCount(10);
-
+         AssertMinidumpsGeneratedAndErrorsLogged(10, true);
       }
 
       [Test]
       public void MinidumpsOlderThan4HoursMayBeDeleted()
       {
-         SetCrashSimulationMode(3);
+         _settings.CrashSimulationMode = 3;
 
          // 11 errors triggered, but only 10 should generate minidumps.
          for (int i = 1; i <= 11; i++)
             TriggerCrashSimulationError();
 
-         AssertMinidumpCount(10);
-         TestSetup.DeleteErrorLog();
-
+         AssertMinidumpsGeneratedAndErrorsLogged(10, false);
+         
          // We should log info that we skipped minidump generation.
          RetryHelper.TryAction(TimeSpan.FromSeconds(5), () =>
          {
-            var log = TestSetup.ReadCurrentDefaultLog();
-            CustomAssert.IsTrue(log.Contains("Minidump creation aborted. The max count (10) is reached and no log is older than 4 hours."));
+            var log = LogHandler.ReadCurrentDefaultLog();
+            Assert.IsTrue(log.Contains("Minidump creation aborted. The max count (10) is reached and no log is older than 4 hours."));
          });
 
          // Pretend one minidump is really old.
@@ -181,10 +160,10 @@ namespace RegressionTests.Infrastructure
          // Now we should be able to create another.
          TriggerCrashSimulationError();
 
-         RetryHelper.TryAction(TimeSpan.FromSeconds(10), () => CustomAssert.IsFalse(File.Exists(testminidump)));
+         RetryHelper.TryAction(TimeSpan.FromSeconds(10), () => Assert.IsFalse(File.Exists(testminidump)));
 
-         AssertMinidumpCount(10);
 
+         AssertMinidumpsGeneratedAndErrorsLogged(10, true);
       }
 
 
@@ -198,29 +177,34 @@ namespace RegressionTests.Infrastructure
          }
       }
 
-      private void AssertMinidumpCount(int count)
+      private void AssertMinidumpsGeneratedAndErrorsLogged(int count, bool delete, params string[] expectedLoggedErrors)
       {
          RetryHelper.TryAction(TimeSpan.FromSeconds(10), () =>
          {
             var minidumps = GetMinidumps();
-            CustomAssert.AreEqual(count, minidumps.Length);
+            Assert.AreEqual(count, minidumps.Length);
+
+            if (count > 0 || expectedLoggedErrors.Length > 0)
+            {
+               string errorLog = LogHandler.ReadErrorLog();
+               foreach (var minidump in minidumps)
+               {
+                  Assert.IsTrue(errorLog.Contains(minidump));
+               }
+
+               foreach (var expectedLoggedError in expectedLoggedErrors)
+               {
+                  Assert.IsTrue(errorLog.Contains(expectedLoggedError));
+               }
+            }
+
          });
-      }
 
-      private void SetCrashSimulationMode(int mode)
-      {
-         var iniFile = Path.Combine(Path.Combine(_settings.Directories.ProgramDirectory, "Bin"), "hMailServer.ini");
-
-         WritePrivateProfileString("Settings", "CrashSimulationMode", mode.ToString(), iniFile);
-
-         var serviceController = new ServiceController("hMailServer");
-         serviceController.Stop();
-         serviceController.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(20));
-
-         serviceController.Start();
-         serviceController.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(20));
-
-         base.TestFixtureSetUp();
+         if (delete)
+         {
+            DeleteAllMinidumps();
+            LogHandler.DeleteErrorLog();
+         }
       }
 
    }

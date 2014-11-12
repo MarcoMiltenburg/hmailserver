@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using hMailServer;
 using NUnit.Framework;
+using RegressionTests.Infrastructure;
 using RegressionTests.Shared;
 
 namespace RegressionTests.SMTP
@@ -27,26 +28,25 @@ namespace RegressionTests.SMTP
          deliveryResults["test@dummy-example.com"] = 250;
 
          int smtpServerPort = TestSetup.GetNextFreePort();
-         using (var server = new SMTPServerSimulator(1, smtpServerPort, eConnectionSecurity.eCSSTARTTLSOptional))
+         using (var server = new SmtpServerSimulator(1, smtpServerPort, eConnectionSecurity.eCSSTARTTLSOptional))
          {
             server.AddRecipientResult(deliveryResults);
             server.StartListen();
 
-            Route route = SMTPClientTests.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSSTARTTLSOptional);
+            Route route = TestSetup.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSSTARTTLSOptional);
 
             // Send message to this route.
-            var smtp = new SMTPClientSimulator();
-            if (!smtp.Send("test@test.com", "test@dummy-example.com", "Test", "Test message"))
-               CustomAssert.Fail("Delivery failed");
+            var smtp = new SmtpClientSimulator();
+            smtp.Send("test@test.com", "test@dummy-example.com", "Test", "Test message");
 
             // Wait for the client to disconnect.
             server.WaitForCompletion();
 
-            TestSetup.AssertRecipientsInDeliveryQueue(0, false);
+            CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
 
             Assert.IsNotNullOrEmpty(server.MessageData);
 
-            CustomAssert.IsTrue(TestSetup.DefaultLogContains("220 Ready to start TLS"));
+            Assert.IsTrue(LogHandler.DefaultLogContains("220 Ready to start TLS"));
          }
       }
 
@@ -58,26 +58,25 @@ namespace RegressionTests.SMTP
          deliveryResults["test@dummy-example.com"] = 250;
 
          int smtpServerPort = TestSetup.GetNextFreePort();
-         using (var server = new SMTPServerSimulator(1, smtpServerPort, eConnectionSecurity.eCSNone))
+         using (var server = new SmtpServerSimulator(1, smtpServerPort, eConnectionSecurity.eCSNone))
          {
             server.AddRecipientResult(deliveryResults);
             server.StartListen();
 
-            Route route = SMTPClientTests.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSSTARTTLSOptional);
+            Route route = TestSetup.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSSTARTTLSOptional);
 
             // Send message to this route.
-            var smtp = new SMTPClientSimulator();
-            if (!smtp.Send("test@test.com", "test@dummy-example.com", "Test", "Test message"))
-               CustomAssert.Fail("Delivery failed");
+            var smtp = new SmtpClientSimulator();
+            smtp.Send("test@test.com", "test@dummy-example.com", "Test", "Test message");
 
             // Wait for the client to disconnect.
             server.WaitForCompletion();
 
-            TestSetup.AssertRecipientsInDeliveryQueue(0, false);
+            CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
 
             Assert.IsNotNullOrEmpty(server.MessageData);
 
-            CustomAssert.IsFalse(TestSetup.DefaultLogContains("220 Ready to start TLS"));
+            Assert.IsFalse(LogHandler.DefaultLogContains("220 Ready to start TLS"));
          }
       }
 
@@ -89,26 +88,26 @@ namespace RegressionTests.SMTP
          deliveryResults["test@dummy-example.com"] = 250;
 
          int smtpServerPort = TestSetup.GetNextFreePort();
-         using (var server = new SMTPServerSimulator(1, smtpServerPort, eConnectionSecurity.eCSSTARTTLSOptional))
+         using (var server = new SmtpServerSimulator(1, smtpServerPort, eConnectionSecurity.eCSSTARTTLSOptional))
          {
             server.AddRecipientResult(deliveryResults);
             server.StartListen();
 
-            Route route = SMTPClientTests.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSNone);
+            Route route = TestSetup.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSNone);
 
             // Send message to this route.
-            var smtp = new SMTPClientSimulator();
-            if (!smtp.Send("test@test.com", "test@dummy-example.com", "Test", "Test message"))
-               CustomAssert.Fail("Delivery failed");
+            var smtp = new SmtpClientSimulator();
+            smtp.Send("test@test.com", "test@dummy-example.com", "Test", "Test message");
+               
 
             // Wait for the client to disconnect.
             server.WaitForCompletion();
 
-            TestSetup.AssertRecipientsInDeliveryQueue(0, false);
+            CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
 
             Assert.IsNotNullOrEmpty(server.MessageData);
 
-            CustomAssert.IsFalse(TestSetup.DefaultLogContains("220 Ready to start TLS"));
+            Assert.IsFalse(LogHandler.DefaultLogContains("220 Ready to start TLS"));
          }
       }
 
@@ -120,26 +119,25 @@ namespace RegressionTests.SMTP
          deliveryResults["test@dummy-example.com"] = 250;
 
          int smtpServerPort = TestSetup.GetNextFreePort();
-         using (var server = new SMTPServerSimulator(1, smtpServerPort, eConnectionSecurity.eCSNone))
+         using (var server = new SmtpServerSimulator(1, smtpServerPort, eConnectionSecurity.eCSNone))
          {
             server.AddRecipientResult(deliveryResults);
             server.StartListen();
 
-            Route route = SMTPClientTests.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSNone);
+            Route route = TestSetup.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSNone);
 
             // Send message to this route.
-            var smtp = new SMTPClientSimulator();
-            if (!smtp.Send("test@test.com", "test@dummy-example.com", "Test", "Test message"))
-               CustomAssert.Fail("Delivery failed");
+            var smtp = new SmtpClientSimulator();
+            smtp.Send("test@test.com", "test@dummy-example.com", "Test", "Test message");
 
             // Wait for the client to disconnect.
             server.WaitForCompletion();
 
-            TestSetup.AssertRecipientsInDeliveryQueue(0, false);
+            CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
 
             Assert.IsNotNullOrEmpty(server.MessageData);
 
-            CustomAssert.IsFalse(TestSetup.DefaultLogContains("220 Ready to start TLS"));
+            Assert.IsFalse(LogHandler.DefaultLogContains("220 Ready to start TLS"));
          }
       }
 
@@ -148,7 +146,7 @@ namespace RegressionTests.SMTP
       [Test]
       public void TestDelivertoServerNotSupportingEHLOOptionalConnectionSecurity()
       {
-         CustomAssert.AreEqual(0, _status.UndeliveredMessages.Length);
+         Assert.AreEqual(0, _status.UndeliveredMessages.Length);
 
          var deliveryResults = new Dictionary<string, int>()
             {
@@ -156,33 +154,32 @@ namespace RegressionTests.SMTP
             };
 
          int smtpServerPort = TestSetup.GetNextFreePort();
-         using (var server = new SMTPServerSimulator(1, smtpServerPort))
+         using (var server = new SmtpServerSimulator(1, smtpServerPort))
          {
             server.ServerSupportsEhlo = false;
             server.AddRecipientResult(deliveryResults);
             server.StartListen();
 
             // Add a route so we can conenct to localhost.
-            SMTPClientTests.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSSTARTTLSOptional);
+            TestSetup.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSSTARTTLSOptional);
 
             // Send message to this route.
 
-            if (!SMTPClientSimulator.StaticSend("test@test.com", "user1@dummy-example.com", "Test", "Test message"))
-               CustomAssert.Fail("Delivery failed");
+            SmtpClientSimulator.StaticSend("test@test.com", "user1@dummy-example.com", "Test", "Test message");
 
             // Wait for the client to disconnect.
             server.WaitForCompletion();
 
-            TestSetup.AssertRecipientsInDeliveryQueue(0, false);
+            CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
 
-            CustomAssert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.IsTrue(server.MessageData.Contains("Test message"));
          }
       }
 
       [Test]
       public void TestDeliverToServerNotSupportingEHLORequiredConnectionSecurity()
       {
-         CustomAssert.AreEqual(0, _status.UndeliveredMessages.Length);
+         Assert.AreEqual(0, _status.UndeliveredMessages.Length);
 
          var deliveryResults = new Dictionary<string, int>()
             {
@@ -190,27 +187,26 @@ namespace RegressionTests.SMTP
             };
 
          int smtpServerPort = TestSetup.GetNextFreePort();
-         using (var server = new SMTPServerSimulator(1, smtpServerPort))
+         using (var server = new SmtpServerSimulator(1, smtpServerPort))
          {
             server.ServerSupportsEhlo = false;
             server.AddRecipientResult(deliveryResults);
             server.StartListen();
 
             // Add a route so we can conenct to localhost.
-            SMTPClientTests.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSSTARTTLSRequired);
+            TestSetup.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSSTARTTLSRequired);
 
             // Send message to this route.
 
-            if (!SMTPClientSimulator.StaticSend("test@test.com", "user1@dummy-example.com", "Test", "Test message"))
-               CustomAssert.Fail("Delivery failed");
+            SmtpClientSimulator.StaticSend("test@test.com", "user1@dummy-example.com", "Test", "Test message");
 
             // Wait for the client to disconnect.
             server.WaitForCompletion();
 
-            TestSetup.AssertRecipientsInDeliveryQueue(0, true);
+            CustomAsserts.AssertRecipientsInDeliveryQueue(0, true);
 
-            var msg = POP3ClientSimulator.AssertGetFirstMessageText("test@test.com", "test");
-            CustomAssert.IsTrue(msg.Contains("Server does not support EHLO command."));
+            var msg = Pop3ClientSimulator.AssertGetFirstMessageText("test@test.com", "test");
+            Assert.IsTrue(msg.Contains("Server does not support EHLO command."));
          }
       }
    }

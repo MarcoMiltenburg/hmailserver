@@ -39,7 +39,7 @@ namespace RegressionTests.IMAP
             Thread.Sleep(20);
          }
 
-         CustomAssert.Fail("Messages not indexed...");
+         Assert.Fail("Messages not indexed...");
       }
 
       private void SendMessage(string subject, string body, string to, string cc)
@@ -66,21 +66,21 @@ namespace RegressionTests.IMAP
 
          // disable...
          SendMessage("Test C", "Body", "", "ÄÄÄ");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
 
          SendMessage("Test B", "Body", "", "ÖÖÖ");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
 
          SendMessage("Test A", "Body", "", "ÅÅÅ");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
 
          AssertAllMessagesIndexed();
 
-         var sim = new IMAPClientSimulator(account.Address, "test", "Inbox");
+         var sim = new ImapClientSimulator(account.Address, "test", "Inbox");
 
          string result = sim.Sort("(CC) UTF-8 ALL");
 
-         CustomAssert.AreEqual("3 1 2", result);
+         Assert.AreEqual("3 1 2", result);
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -89,7 +89,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          string resultAfter = sim.Sort("(CC) UTF-8 ALL");
 
-         CustomAssert.AreEqual(result, resultAfter);
+         Assert.AreEqual(result, resultAfter);
       }
 
       [Test]
@@ -101,27 +101,27 @@ namespace RegressionTests.IMAP
 
          // disable...
          SendMessage("Test A", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
 
          SendMessage("Test B", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
 
          SendMessage("Test C", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
 
          SendMessage("Test D", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 4);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 4);
 
          SendMessage("Test E", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 5);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 5);
 
          AssertAllMessagesIndexed();
 
-         var sim = new IMAPClientSimulator(account.Address, "test", "Inbox");
+         var sim = new ImapClientSimulator(account.Address, "test", "Inbox");
 
          string result = sim.Sort("(DATE) UTF-8 ALL");
 
-         CustomAssert.AreEqual("1 2 3 4 5", result);
+         Assert.AreEqual("1 2 3 4 5", result);
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -130,7 +130,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          string resultAfter = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         CustomAssert.AreEqual(result, resultAfter);
+         Assert.AreEqual(result, resultAfter);
       }
 
       [Test]
@@ -142,18 +142,18 @@ namespace RegressionTests.IMAP
 
          // disable...
          SendMessage("Test 1", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
 
          SendMessage("Test 2", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
 
          AssertAllMessagesIndexed();
 
-         var sim = new IMAPClientSimulator(account.Address, "test", "Inbox");
+         var sim = new ImapClientSimulator(account.Address, "test", "Inbox");
 
          string result = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         CustomAssert.IsTrue(result.StartsWith("1 2"));
+         Assert.IsTrue(result.StartsWith("1 2"));
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -162,7 +162,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          string resultAfter = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         CustomAssert.AreEqual(result, resultAfter);
+         Assert.AreEqual(result, resultAfter);
       }
 
 
@@ -175,36 +175,36 @@ namespace RegressionTests.IMAP
 
          // disable...
          SendMessage("Test Σ", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
          // pos: 18
 
          SendMessage("Test Α", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
          // pos: 1
 
          SendMessage("Test Δ", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
          // pos: 4
 
          SendMessage("Test β", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 4);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 4);
          // pos: 2
 
          SendMessage("Test κ", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 5);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 5);
          // pos: 10
 
          SendMessage("Test Ψ", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 6);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 6);
          // pos: 23
 
          AssertAllMessagesIndexed();
 
-         var sim = new IMAPClientSimulator(account.Address, "test", "Inbox");
+         var sim = new ImapClientSimulator(account.Address, "test", "Inbox");
 
          string result = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         CustomAssert.AreEqual("2 4 3 5 1 6", result);
+         Assert.AreEqual("2 4 3 5 1 6", result);
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -213,7 +213,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          string resultAfter = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         CustomAssert.AreEqual(result, resultAfter);
+         Assert.AreEqual(result, resultAfter);
       }
 
       [Test]
@@ -225,21 +225,21 @@ namespace RegressionTests.IMAP
 
          // disable...
          SendMessage("Test Ä", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
 
          SendMessage("Test Ö", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
 
          SendMessage("Test Å", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
 
          AssertAllMessagesIndexed();
 
-         var sim = new IMAPClientSimulator(account.Address, "test", "Inbox");
+         var sim = new ImapClientSimulator(account.Address, "test", "Inbox");
 
          string result = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         CustomAssert.AreEqual("3 1 2", result);
+         Assert.AreEqual("3 1 2", result);
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -248,7 +248,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          string resultAfter = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         CustomAssert.AreEqual(result, resultAfter);
+         Assert.AreEqual(result, resultAfter);
       }
 
       [Test]
@@ -260,32 +260,32 @@ namespace RegressionTests.IMAP
 
          // disable...
          SendMessage("Test Ç", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
          // pos: 4
 
          SendMessage("Test C", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
          // pos: 3
 
          SendMessage("Test B", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
          // pos: 2
 
          SendMessage("Test Ğ", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 4);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 4);
          // pos: 9
 
          SendMessage("Test G", "Body", "", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 5);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 5);
          // pos: 8
 
          AssertAllMessagesIndexed();
 
-         var sim = new IMAPClientSimulator(account.Address, "test", "Inbox");
+         var sim = new ImapClientSimulator(account.Address, "test", "Inbox");
 
          string result = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         CustomAssert.AreEqual("3 2 1 5 4", result);
+         Assert.AreEqual("3 2 1 5 4", result);
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -294,7 +294,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          string resultAfter = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         CustomAssert.AreEqual(result, resultAfter);
+         Assert.AreEqual(result, resultAfter);
       }
 
       [Test]
@@ -306,21 +306,21 @@ namespace RegressionTests.IMAP
 
          // disable...
          SendMessage("Test A", "Body", "ÅÅÅ", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
 
          SendMessage("Test B", "Body", "ÖÖÖ", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 2);
 
          SendMessage("Test C", "Body", "ÄÄÄ", "");
-         IMAPClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
+         ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 3);
 
          AssertAllMessagesIndexed();
 
-         var sim = new IMAPClientSimulator(account.Address, "test", "Inbox");
+         var sim = new ImapClientSimulator(account.Address, "test", "Inbox");
 
          string result = sim.Sort("(TO) UTF-8 ALL");
 
-         CustomAssert.AreEqual("1 3 2", result);
+         Assert.AreEqual("1 3 2", result);
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -329,7 +329,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          string resultAfter = sim.Sort("(TO) UTF-8 ALL");
 
-         CustomAssert.AreEqual(result, resultAfter);
+         Assert.AreEqual(result, resultAfter);
       }
    }
 }

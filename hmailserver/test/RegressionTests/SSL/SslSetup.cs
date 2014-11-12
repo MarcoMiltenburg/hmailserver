@@ -2,16 +2,22 @@
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using hMailServer;
+using NUnit.Framework;
+using RegressionTests.Shared;
 
 namespace RegressionTests.SSL
 {
    public class SslSetup
    {
-      public static void SetupSSLPorts(hMailServer.Application application)
+      public static void SetupSSLPorts(hMailServer.Application application, SslVersions sslVersions = null)
       {
          SSLCertificate sslCeritifcate = SetupSSLCertificate(application);
 
-         var ports = application.Settings.TCPIPPorts;
+         var settings = application.Settings;
+
+         var ports = settings.TCPIPPorts;
+
+         ports.SetDefault();
 
          AddPort(ports, 25000, eConnectionSecurity.eCSNone, sslCeritifcate.ID, eSessionType.eSTSMTP);
          AddPort(ports, 11000, eConnectionSecurity.eCSNone, sslCeritifcate.ID, eSessionType.eSTPOP3);
@@ -29,6 +35,11 @@ namespace RegressionTests.SSL
          AddPort(ports, 11003, eConnectionSecurity.eCSSTARTTLSRequired, sslCeritifcate.ID, eSessionType.eSTPOP3);
          AddPort(ports, 14303, eConnectionSecurity.eCSSTARTTLSRequired, sslCeritifcate.ID, eSessionType.eSTIMAP);
 
+         settings.SslVersion30Enabled = sslVersions == null || sslVersions.Ssl30;
+         settings.TlsVersion10Enabled = sslVersions == null || sslVersions.Tls10;
+         settings.TlsVersion11Enabled = sslVersions == null || sslVersions.Tls11;
+         settings.TlsVersion12Enabled = sslVersions == null || sslVersions.Tls12;
+         
          application.Stop();
          application.Start();
       }
@@ -76,9 +87,9 @@ namespace RegressionTests.SSL
          var exampleKey = Path.Combine(sslPath, "example.key");
 
          if (!File.Exists(exampleCert))
-            CustomAssert.Fail("Certificate " + exampleCert + " was not found");
+            Assert.Fail("Certificate " + exampleCert + " was not found");
          if (!File.Exists(exampleKey))
-            CustomAssert.Fail("Private key " + exampleKey + " was not found");
+            Assert.Fail("Private key " + exampleKey + " was not found");
 
 
          SSLCertificate sslCertificate = application.Settings.SSLCertificates.Add();

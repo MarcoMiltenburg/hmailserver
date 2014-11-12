@@ -9,6 +9,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using NUnit.Framework;
+using RegressionTests.Infrastructure;
 using RegressionTests.Shared;
 using hMailServer;
 
@@ -22,8 +23,8 @@ namespace RegressionTests.SMTP
       {
          for (int i = 0; i < 50; i++)
          {
-            var oSMTP = new SMTPClientSimulator();
-            oSMTP.Send("test@test.com", "bigaccount@test.com", "Big account email", "Body av email");
+            var smtpClientSimulator = new SmtpClientSimulator();
+            smtpClientSimulator.Send("test@test.com", "bigaccount@test.com", "Big account email", "Body av email");
          }
       }
 
@@ -43,20 +44,20 @@ namespace RegressionTests.SMTP
          Thread.Sleep(1000);
          var sock = new TcpConnection();
          sock.Connect(25);
-         CustomAssert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.IsTrue(sock.Receive().StartsWith("220"));
          sock.Send("EHLO test.com\r\n");
-         CustomAssert.IsTrue(sock.Receive().StartsWith("250"));
+         Assert.IsTrue(sock.Receive().StartsWith("250"));
 
          string base64EncodedUsername = EncodeBase64("test@test.com");
          sock.Send("AUTH LOGIN " + base64EncodedUsername + "\r\n");
-         CustomAssert.IsTrue(sock.Receive().StartsWith("334"));
+         Assert.IsTrue(sock.Receive().StartsWith("334"));
 
          sock.Send(EncodeBase64("test") + "\r\n");
-         CustomAssert.IsTrue(sock.Receive().StartsWith("235"));
+         Assert.IsTrue(sock.Receive().StartsWith("235"));
 
          DateTime lastLogonTimeAfter =
             Convert.ToDateTime(SingletonProvider<TestSetup>.Instance.GetApp().Domains[0].Accounts[0].LastLogonTime);
-         CustomAssert.AreNotEqual(lastLogonTimeBefore, lastLogonTimeAfter);
+         Assert.AreNotEqual(lastLogonTimeBefore, lastLogonTimeAfter);
       }
 
 
@@ -73,8 +74,8 @@ namespace RegressionTests.SMTP
          recipientAccount.Save();
 
          // Make sure that no bounce is sent.
-         SMTPClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "MySubject", "Test");
-         POP3ClientSimulator.AssertGetFirstMessageText(recipientAccount.Address, "test");
+         SmtpClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "MySubject", "Test");
+         Pop3ClientSimulator.AssertGetFirstMessageText(recipientAccount.Address, "test");
 
          // Build a 2MB string.
          var builder = new StringBuilder();
@@ -85,22 +86,22 @@ namespace RegressionTests.SMTP
          }
          string text = builder.ToString();
 
-         SMTPClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "Test subject", text);
+         SmtpClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "Test subject", text);
 
          // Make sure the recipient did not receive it.
-         TestSetup.AssertRecipientsInDeliveryQueue(0);
-         POP3ClientSimulator.AssertMessageCount(recipientAccount.Address, "test", 0);
-         SingletonProvider<TestSetup>.Instance.AssertFilesInUserDirectory(recipientAccount, 0);
+         CustomAsserts.AssertRecipientsInDeliveryQueue(0);
+         Pop3ClientSimulator.AssertMessageCount(recipientAccount.Address, "test", 0);
+         CustomAsserts.AssertFilesInUserDirectory(recipientAccount, 0);
 
          // Make sure it bounced.
-         string content = POP3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
-         CustomAssert.IsTrue(content.Contains("Inbox is full"));
-         CustomAssert.IsTrue(content.Contains("Subject: Test subject"));
+         string content = Pop3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
+         Assert.IsTrue(content.Contains("Inbox is full"));
+         Assert.IsTrue(content.Contains("Subject: Test subject"));
 
          // Make sure body contains year.
          int bodyStartPos = content.IndexOf("\r\n\r\n");
          int yearPos = content.IndexOf(DateTime.Now.Year.ToString(), bodyStartPos);
-         CustomAssert.IsTrue(yearPos >= 0);
+         Assert.IsTrue(yearPos >= 0);
       }
 
       [Test]
@@ -118,13 +119,13 @@ namespace RegressionTests.SMTP
          deliveryResults["test@dummy-example.com"] = 250;
 
          int smtpServerPort = TestSetup.GetNextFreePort();
-         using (var server = new SMTPServerSimulator(1, smtpServerPort))
+         using (var server = new SmtpServerSimulator(1, smtpServerPort))
          {
             server.AddRecipientResult(deliveryResults);
             server.StartListen();
 
 
-            Route route = SMTPClientTests.AddRoutePointingAtLocalhost(1, smtpServerPort, true, eConnectionSecurity.eCSNone);
+            Route route = TestSetup.AddRoutePointingAtLocalhost(1, smtpServerPort, true, eConnectionSecurity.eCSNone);
 
             // Now send a message from test@test.com to test@otherdomain.com.
             // Error scenario:
@@ -135,17 +136,17 @@ namespace RegressionTests.SMTP
             // This should not happen. Otherdomain.com is an alias for test.com,
             // but we shouldn't actually modify the recipient address just because
             // of this.
-            var smtpClient = new SMTPClientSimulator();
-            CustomAssert.IsTrue(smtpClient.Send(account.Address, "test@dummy-example.com", "Test", "Test message"));
+            var smtpClient = new SmtpClientSimulator();
+            smtpClient.Send(account.Address, "test@dummy-example.com", "Test", "Test message");
 
-            TestSetup.AssertRecipientsInDeliveryQueue(0);
+            CustomAsserts.AssertRecipientsInDeliveryQueue(0);
 
-            POP3ClientSimulator.AssertMessageCount(account.Address, "test", 0);
+            Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 0);
 
             // This should now be processed via the rule -> route -> external server we've set up.
             server.WaitForCompletion();
 
-            CustomAssert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.IsTrue(server.MessageData.Contains("Test message"));
          }
       }
 
@@ -157,12 +158,12 @@ namespace RegressionTests.SMTP
          DateTime lastLogonTimeBefore = Convert.ToDateTime(account.LastLogonTime);
 
          Thread.Sleep(1000);
-         SMTPClientSimulator.StaticSend("someone@test.com", "us'er@test.com", "Test", "Test");
+         SmtpClientSimulator.StaticSend("someone@test.com", "us'er@test.com", "Test", "Test");
 
-         TestSetup.AssertRecipientsInDeliveryQueue(0);
+         CustomAsserts.AssertRecipientsInDeliveryQueue(0);
          DateTime lastLogonTimeAfter =
             Convert.ToDateTime(SingletonProvider<TestSetup>.Instance.GetApp().Domains[0].Accounts[0].LastLogonTime);
-         CustomAssert.AreEqual(lastLogonTimeBefore, lastLogonTimeAfter);
+         Assert.AreEqual(lastLogonTimeBefore, lastLogonTimeAfter);
       }
 
       [Test]
@@ -175,11 +176,11 @@ namespace RegressionTests.SMTP
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "user@test.com", "test");
 
-         SMTPClientSimulator.StaticSend("user@test.com", "user@test.com", "Test", "Test");
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         SmtpClientSimulator.StaticSend("user@test.com", "user@test.com", "Test", "Test");
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
          Message message = account.IMAPFolders.get_ItemByName("INBOX").Messages[0];
-         CustomAssert.IsTrue(message.get_Flag(eMessageFlag.eMFVirusScan));
+         Assert.IsTrue(message.get_Flag(eMessageFlag.eMFVirusScan));
       }
 
       [Test]
@@ -199,24 +200,24 @@ namespace RegressionTests.SMTP
          Account oAccount1 = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
 
          IPAddress localAddress = TestSetup.GetLocalIpAddress();
-         var oSMTP = new SMTPClientSimulator(false, 25, localAddress);
+         var smtpClientSimulator = new SmtpClientSimulator(false, 25, localAddress);
 
          // Delivery from external to local.
-         CustomAssert.IsTrue(oSMTP.Send("test@external.com", "test@test.com", "Mail 1", "Mail 1"));
-         POP3ClientSimulator.AssertMessageCount("test@test.com", "test", 1);
+         smtpClientSimulator.Send("test@external.com", "test@test.com", "Mail 1", "Mail 1");
+         Pop3ClientSimulator.AssertMessageCount("test@test.com", "test", 1);
          string contents = TestSetup.ReadExistingTextFile(logging.CurrentAwstatsLog);
-         TestSetup.AssertDeleteFile(logging.CurrentAwstatsLog);
+         CustomAsserts.AssertDeleteFile(logging.CurrentAwstatsLog);
          string expectedString = string.Format("\ttest@external.com\ttest@test.com\t{0}\t127.0.0.1\tSMTP\t?\t250\t",
                                                localAddress);
-         CustomAssert.IsTrue(contents.Contains(expectedString), contents);
+         Assert.IsTrue(contents.Contains(expectedString), contents);
 
          // Failed delivery from local to local.
-         CustomAssert.IsFalse(oSMTP.Send("test@test.com", "test@test.com", "Mail 1", "Mail 1"));
+         CustomAsserts.Throws<DeliveryFailedException>(() => smtpClientSimulator.Send("test@test.com", "test@test.com", "Mail 1", "Mail 1"));
          contents = TestSetup.ReadExistingTextFile(logging.CurrentAwstatsLog);
-         TestSetup.AssertDeleteFile(logging.CurrentAwstatsLog);
+         CustomAsserts.AssertDeleteFile(logging.CurrentAwstatsLog);
          expectedString = string.Format("\ttest@test.com\ttest@test.com\t{0}\t127.0.0.1\tSMTP\t?\t530\t",
                                         localAddress);
-         CustomAssert.IsTrue(contents.Contains(expectedString), contents);
+         Assert.IsTrue(contents.Contains(expectedString), contents);
       }
 
       [Test]
@@ -238,19 +239,19 @@ namespace RegressionTests.SMTP
 
          string text = builder.ToString();
 
-         SMTPClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "", text);
+         SmtpClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "", text);
 
          // Make sure the recipient did not receive it.
-         TestSetup.AssertRecipientsInDeliveryQueue(0);
+         CustomAsserts.AssertRecipientsInDeliveryQueue(0);
 
          // Check the syntax in the bounce message.
-         string content = POP3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
+         string content = Pop3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
 
          // The bounce message should contain the MIME-version.
-         CustomAssert.IsTrue(content.Contains("MIME-Version: 1.0"));
+         Assert.IsTrue(content.Contains("MIME-Version: 1.0"));
 
          // Lines may not end with space if they are QP-encoded.
-         CustomAssert.IsTrue(content.Contains("  Subject:=20"));
+         Assert.IsTrue(content.Contains("  Subject:=20"));
       }
 
       
@@ -267,12 +268,12 @@ namespace RegressionTests.SMTP
                           "" + Environment.NewLine +
                           "Test";
 
-         SMTPClientSimulator.StaticSendRaw("test@test.com", "test@test.com", content);
+         SmtpClientSimulator.StaticSendRaw("test@test.com", "test@test.com", content);
 
-         string test = POP3ClientSimulator.AssertGetFirstMessageText("test@test.com", "test");
+         string test = Pop3ClientSimulator.AssertGetFirstMessageText("test@test.com", "test");
 
-         CustomAssert.IsTrue(test.Contains("Message-Id"));
-         CustomAssert.IsFalse(test.Contains("Message-ID"));
+         Assert.IsTrue(test.Contains("Message-Id"));
+         Assert.IsFalse(test.Contains("Message-ID"));
       }
 
       [Test]
@@ -283,12 +284,12 @@ namespace RegressionTests.SMTP
          settings.HostName = "examplify.com";
 
          var socket = new TcpConnection();
-         CustomAssert.IsTrue(socket.Connect(25));
+         Assert.IsTrue(socket.Connect(25));
          string result = socket.Receive();
          socket.Send("EHLO example.com\r\n");
          result = socket.Receive();
          socket.Disconnect();
-         CustomAssert.IsTrue(result.Contains("250-" + settings.HostName));
+         Assert.IsTrue(result.Contains("250-" + settings.HostName));
       }
 
       [Test]
@@ -347,40 +348,40 @@ namespace RegressionTests.SMTP
       {
          Account account1 = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
 
-         var oSMTP = new TcpConnection();
-         oSMTP.Connect(25);
+         var smtpClientSimulator = new TcpConnection();
+         smtpClientSimulator.Connect(25);
 
-         CustomAssert.IsTrue(oSMTP.Receive().StartsWith("220"));
-         oSMTP.Send("HELO test\r\n");
-         CustomAssert.IsTrue(oSMTP.Receive().StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("220"));
+         smtpClientSimulator.Send("HELO test\r\n");
+         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
 
          // A few tests of invalid syntax.
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("MAIL FROM: <test@test.com\r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("MAIL FROM: test@test.com>\r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("MAIL FROM: <    test@test.com    \r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("MAIL FROM: <        \r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("MAIL FROM: >        \r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("MAIL FROM: <sdsdfs@sdsdf.csd\r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("MAIL FROM <sdsdfs@sdsdf.csd>\r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("MAIL FROM  sdsdfs@sdsdf.csd\r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@test.com\r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: test@test.com>\r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: <    test@test.com    \r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: <        \r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: >        \r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: <sdsdfs@sdsdf.csd\r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM <sdsdfs@sdsdf.csd>\r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM  sdsdfs@sdsdf.csd\r\n").StartsWith("250"));
 
          // Valid syntax, < and >
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("MAIL FROM: <test@test.com>\r\n").StartsWith("250"));
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("RSET\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@test.com>\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"));
 
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("MAIL FROM: test@test.com\r\n").StartsWith("250"));
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("RSET\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM: test@test.com\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"));
 
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("MAIL FROM:    test@test.com   \r\n").StartsWith("250"));
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("RSET\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM:    test@test.com   \r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"));
 
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("MAIL FROM:test@test.com\r\n").StartsWith("250"));
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("RSET\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM:test@test.com\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"));
 
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("MAIL FROM:<test@test.com>\r\n").StartsWith("250"));
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("RSET\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM:<test@test.com>\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"));
 
-         oSMTP.Disconnect();
+         smtpClientSimulator.Disconnect();
       }
 
       [Test]
@@ -396,8 +397,8 @@ namespace RegressionTests.SMTP
          recipientAccount.Save();
 
          // Make sure that no bounce is sent.
-         SMTPClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "MySubject", "Test");
-         POP3ClientSimulator.AssertGetFirstMessageText(recipientAccount.Address, "test");
+         SmtpClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "MySubject", "Test");
+         Pop3ClientSimulator.AssertGetFirstMessageText(recipientAccount.Address, "test");
 
          // Build a 2MB string.
          var builder = new StringBuilder();
@@ -408,16 +409,16 @@ namespace RegressionTests.SMTP
          }
          string text = builder.ToString();
 
-         SMTPClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "MySubject", text);
+         SmtpClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "MySubject", text);
 
          // Make sure the recipient did not receive it.
-         TestSetup.AssertRecipientsInDeliveryQueue(0);
-         POP3ClientSimulator.AssertMessageCount(recipientAccount.Address, "test", 0);
-         SingletonProvider<TestSetup>.Instance.AssertFilesInUserDirectory(recipientAccount, 0);
+         CustomAsserts.AssertRecipientsInDeliveryQueue(0);
+         Pop3ClientSimulator.AssertMessageCount(recipientAccount.Address, "test", 0);
+         CustomAsserts.AssertFilesInUserDirectory(recipientAccount, 0);
 
          // Make sure it bounced.
-         string content = POP3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
-         CustomAssert.IsTrue(content.Contains("Inbox is full"));
+         string content = Pop3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
+         Assert.IsTrue(content.Contains("Inbox is full"));
       }
 
       [Test]
@@ -433,10 +434,10 @@ namespace RegressionTests.SMTP
          recipientAccount.Save();
 
          // Make sure we can send several messages.
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "Test", "Test"));
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "Test", "Test"));
+         SmtpClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "Test", "Test");
+         SmtpClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "Test", "Test");
 
-         POP3ClientSimulator.AssertMessageCount(recipientAccount.Address, "test", 2);
+         Pop3ClientSimulator.AssertMessageCount(recipientAccount.Address, "test", 2);
       }
 
       [Test]
@@ -447,7 +448,7 @@ namespace RegressionTests.SMTP
 
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "bigaccount@test.com", "test");
 
-         var oSMTP = new SMTPClientSimulator();
+         var smtpClientSimulator = new SmtpClientSimulator();
 
 
          var oThreads = new ArrayList();
@@ -465,7 +466,7 @@ namespace RegressionTests.SMTP
             oThread.Join();
          }
 
-         IMAPClientSimulator.AssertMessageCount("bigaccount@test.com", "test", "Inbox", 250);
+         ImapClientSimulator.AssertMessageCount("bigaccount@test.com", "test", "Inbox", 250);
       }
 
       [Test]
@@ -478,27 +479,27 @@ namespace RegressionTests.SMTP
          deliveryResults["user1@dummy-example.com"] = 250;
 
          int smtpServerPort = TestSetup.GetNextFreePort();
-         using (var server = new SMTPServerSimulator(1, smtpServerPort))
+         using (var server = new SmtpServerSimulator(1, smtpServerPort))
          {
             server.AddRecipientResult(deliveryResults);
             server.StartListen();
 
             // Add a route so we can connect to localhost.
-            Route route = SMTPClientTests.AddRoutePointingAtLocalhostMultipleHosts(2, smtpServerPort);
+            Route route = TestSetup.AddRoutePointingAtLocalhostMultipleHosts(2, smtpServerPort);
 
             // Send message to this route.
-            var smtp = new SMTPClientSimulator();
+            var smtp = new SmtpClientSimulator();
             var recipients = new List<string>();
 
             recipients.Add("user1@dummy-example.com");
 
-            CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("test@test.com", "user1@dummy-example.com", "Test", "Test"));
+            SmtpClientSimulator.StaticSend("test@test.com", "user1@dummy-example.com", "Test", "Test");
 
             // Wait for the client to disconnect.
             server.WaitForCompletion();
 
-            string log = TestSetup.ReadCurrentDefaultLog();
-            CustomAssert.IsTrue(log.Contains("Truncating MX server list."));
+            string log = LogHandler.ReadCurrentDefaultLog();
+            Assert.IsTrue(log.Contains("Truncating MX server list."));
          }
       }
 
@@ -511,8 +512,8 @@ namespace RegressionTests.SMTP
          Alias alias = SingletonProvider<TestSetup>.Instance.AddAlias(_domain, "alias@test.com", "test@test.com");
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("someone@example.com", "someone@test.com", "Test", "Test"));
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         SmtpClientSimulator.StaticSend("someone@example.com", "someone@test.com", "Test", "Test");
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
       }
 
       [Test]
@@ -522,7 +523,7 @@ namespace RegressionTests.SMTP
          _domain.Save();
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
-         CustomAssert.IsFalse(SMTPClientSimulator.StaticSend("someone@example.com", "someone@test.com", "Test", "Test"));
+         CustomAsserts.Throws<DeliveryFailedException>(() => SmtpClientSimulator.StaticSend("someone@example.com", "someone@test.com", "Test", "Test"));
       }
 
       [Test]
@@ -534,9 +535,9 @@ namespace RegressionTests.SMTP
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "sender@test.com", "test");
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("sender@test.com", "someone@test.com", "Test", "Test"));
+         SmtpClientSimulator.StaticSend("sender@test.com", "someone@test.com", "Test", "Test");
 
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
       }
 
       [Test]
@@ -551,9 +552,9 @@ namespace RegressionTests.SMTP
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(otherDomain, "test@otherDomain.com",
                                                                             "test");
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("sender@test.com", "someone@test.com", "Test", "Test"));
+         SmtpClientSimulator.StaticSend("sender@test.com", "someone@test.com", "Test", "Test");
 
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
       }
 
       [Test]
@@ -571,9 +572,9 @@ namespace RegressionTests.SMTP
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(otherDomain, "test@otherDomain.com",
                                                                             "test");
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("sender@test.com", "someone@test.com", "Test", "Test"));
+         SmtpClientSimulator.StaticSend("sender@test.com", "someone@test.com", "Test", "Test");
 
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
       }
 
       [Test]
@@ -586,7 +587,7 @@ namespace RegressionTests.SMTP
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "sender@test.com", "test");
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
-         CustomAssert.IsFalse(SMTPClientSimulator.StaticSend("sender@example.com", "someone@example.com", "Test", "Test"));
+         CustomAsserts.Throws<DeliveryFailedException>(() => SmtpClientSimulator.StaticSend("sender@example.com", "someone@example.com", "Test", "Test"));
       }
 
       [Test]
@@ -603,9 +604,9 @@ namespace RegressionTests.SMTP
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(otherDomain, "account@otherDomain.com",
                                                                             "test");
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("sender@test.com", "someone@test.com", "Test", "Test"));
+         SmtpClientSimulator.StaticSend("sender@test.com", "someone@test.com", "Test", "Test");
 
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
       }
 
       [Test]
@@ -615,24 +616,24 @@ namespace RegressionTests.SMTP
       {
          Account account1 = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
 
-         var oSMTP = new TcpConnection();
-         oSMTP.Connect(25);
+         var smtpClientSimulator = new TcpConnection();
+         smtpClientSimulator.Connect(25);
 
-         CustomAssert.IsTrue(oSMTP.Receive().StartsWith("220"));
-         oSMTP.Send("HELO test\r\n");
-         CustomAssert.IsTrue(oSMTP.Receive().StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("220"));
+         smtpClientSimulator.Send("HELO test\r\n");
+         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
 
          // A few tests of invalid syntax.
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("MAIL FROM: <test@test.com>\r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("RCPT TO: test@test.com>\r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("RCPT TO: <test@test.com\r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("RCPT TO <test@test.com\r\n").StartsWith("250"));
-         CustomAssert.IsFalse(oSMTP.SendAndReceive("RCPT TO<test@test.com\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@test.com>\r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("RCPT TO: test@test.com>\r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("RCPT TO: <test@test.com\r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("RCPT TO <test@test.com\r\n").StartsWith("250"));
+         Assert.IsFalse(smtpClientSimulator.SendAndReceive("RCPT TO<test@test.com\r\n").StartsWith("250"));
 
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("RCPT TO: <test@test.com>\r\n").StartsWith("250"));
-         CustomAssert.IsTrue(oSMTP.SendAndReceive("RCPT TO: test@test.com\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RCPT TO: <test@test.com>\r\n").StartsWith("250"));
+         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RCPT TO: test@test.com\r\n").StartsWith("250"));
 
-         oSMTP.Disconnect();
+         smtpClientSimulator.Disconnect();
       }
 
       [Test]
@@ -649,19 +650,19 @@ namespace RegressionTests.SMTP
 
          Account account1 = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
 
-         var oSMTP = new TcpConnection();
-         oSMTP.Connect(25);
-         CustomAssert.IsTrue(oSMTP.Receive().StartsWith("220"));
-         oSMTP.Send("HELO test\r\n");
-         CustomAssert.IsTrue(oSMTP.Receive().StartsWith("250"));
-         oSMTP.Send("MAIL FROM: test@test.com\r\n");
-         CustomAssert.IsTrue(oSMTP.Receive().StartsWith("250"));
-         oSMTP.Send("RCPT TO: knafve@gmail.com\r\n");
-         CustomAssert.IsTrue(oSMTP.Receive().StartsWith("250"));
-         oSMTP.Send("RCPT TO: knafve@gmail.com\r\n");
-         CustomAssert.IsTrue(oSMTP.Receive().StartsWith("250"));
+         var smtpClientSimulator = new TcpConnection();
+         smtpClientSimulator.Connect(25);
+         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("220"));
+         smtpClientSimulator.Send("HELO test\r\n");
+         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         smtpClientSimulator.Send("MAIL FROM: test@test.com\r\n");
+         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         smtpClientSimulator.Send("RCPT TO: knafve@gmail.com\r\n");
+         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         smtpClientSimulator.Send("RCPT TO: knafve@gmail.com\r\n");
+         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
 
-         oSMTP.Disconnect();
+         smtpClientSimulator.Disconnect();
       }
 
       [Test]
@@ -683,22 +684,22 @@ namespace RegressionTests.SMTP
          deliveryResults["test2@dummy-example.com"] = 250;
 
          int smtpServerPort = TestSetup.GetNextFreePort();
-         using (var server = new SMTPServerSimulator(1, smtpServerPort))
+         using (var server = new SmtpServerSimulator(1, smtpServerPort))
          {
             server.AddRecipientResult(deliveryResults);
             server.StartListen();
 
-            Route route = SMTPClientTests.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSNone);
+            Route route = TestSetup.AddRoutePointingAtLocalhost(1, smtpServerPort, false, eConnectionSecurity.eCSNone);
 
-            var oSMTP = new SMTPClientSimulator();
-            CustomAssert.IsTrue(oSMTP.Send("test@sdag532sdfagdsa12fsdafdsa1.com",
-                                           "test2@dummy-example.com", "Mail 1", "Test message"));
+            var smtpClientSimulator = new SmtpClientSimulator();
+            smtpClientSimulator.Send("test@sdag532sdfagdsa12fsdafdsa1.com",
+                                           "test2@dummy-example.com", "Mail 1", "Test message");
 
 
             // This should now be processed via the rule -> route -> external server we've set up.
             server.WaitForCompletion();
 
-            CustomAssert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.IsTrue(server.MessageData.Contains("Test message"));
          }
       }
 
@@ -706,8 +707,8 @@ namespace RegressionTests.SMTP
       public void TestSendToAddressWithQuote()
       {
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "us'er@test.com", "test");
-         SMTPClientSimulator.StaticSend("someone@test.com", "us'er@test.com", "Test", "Test");
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         SmtpClientSimulator.StaticSend("someone@test.com", "us'er@test.com", "Test", "Test");
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
       }
 
       [Test]
@@ -718,7 +719,7 @@ namespace RegressionTests.SMTP
          Account oAccount2 = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "multi2@test.com", "test");
          Account oAccount3 = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "multi3@test.com", "test");
 
-         var oSMTP = new SMTPClientSimulator();
+         var smtpClientSimulator = new SmtpClientSimulator();
 
          var lstRecipients = new List<string>();
          lstRecipients.Add("multi1@test.com");
@@ -727,19 +728,19 @@ namespace RegressionTests.SMTP
 
          string sBody = "Test of sending same email to multiple accounts.";
 
-         oSMTP.Send(oAccount1.Address, lstRecipients, "Multi test", sBody);
+         smtpClientSimulator.Send(oAccount1.Address, lstRecipients, "Multi test", sBody);
 
-         var oPOP3 = new POP3ClientSimulator();
+         var pop3ClientSimulator = new Pop3ClientSimulator();
 
-         string sMessageData = POP3ClientSimulator.AssertGetFirstMessageText(oAccount1.Address, "test");
+         string sMessageData = Pop3ClientSimulator.AssertGetFirstMessageText(oAccount1.Address, "test");
          if (sMessageData.IndexOf(sBody) < 0)
             throw new Exception("E-mail not found");
 
-         sMessageData = POP3ClientSimulator.AssertGetFirstMessageText(oAccount2.Address, "test");
+         sMessageData = Pop3ClientSimulator.AssertGetFirstMessageText(oAccount2.Address, "test");
          if (sMessageData.IndexOf(sBody) < 0)
             throw new Exception("E-mail not found");
 
-         sMessageData = POP3ClientSimulator.AssertGetFirstMessageText(oAccount3.Address, "test");
+         sMessageData = Pop3ClientSimulator.AssertGetFirstMessageText(oAccount3.Address, "test");
          if (sMessageData.IndexOf(sBody) < 0)
             throw new Exception("E-mail not found");
       }
@@ -751,8 +752,8 @@ namespace RegressionTests.SMTP
          _domain.Save();
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("someone@example.com", "someone@test.com", "Test", "Test"));
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         SmtpClientSimulator.StaticSend("someone@example.com", "someone@test.com", "Test", "Test");
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
       }
 
 
@@ -767,9 +768,9 @@ namespace RegressionTests.SMTP
          _domain.Save();
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("someone@example.com", "someone@test.com", "Test", "Test"));
+         SmtpClientSimulator.StaticSend("someone@example.com", "someone@test.com", "Test", "Test");
 
-         POP3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+         Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
       }
 
       [Test]
@@ -791,12 +792,12 @@ namespace RegressionTests.SMTP
 
             string result = "";
 
-            var sim = new SMTPClientSimulator();
-            sim.Send(senderAccount.Address, recipientAccount.Address, "MySubject", "Test", out result);
+            var sim = new SmtpClientSimulator();
+            CustomAsserts.Throws<DeliveryFailedException>( () => sim.Send(senderAccount.Address, recipientAccount.Address, "MySubject", "Test", out result));
 
-            CustomAssert.IsTrue(result.StartsWith("4"), "Expected temporary error, but was: " + result);
+            Assert.IsTrue(result.StartsWith("4"), "Expected temporary error, but was: " + result);
 
-            TestSetup.AssertReportedError("Failed to write to the file",
+            CustomAsserts.AssertReportedError("Failed to write to the file",
                                           "Rejected message because no mail data has been saved in file");
          }
          finally
@@ -841,14 +842,14 @@ namespace RegressionTests.SMTP
             {
                if (i < 5)
                {
-                  CustomAssert.Fail("Was disconnected prematurely.");
+                  Assert.Fail("Was disconnected prematurely.");
                }
 
                return;
             }
          }
 
-         CustomAssert.Fail("Wasn't disconnected");
+         Assert.Fail("Wasn't disconnected");
       }
 
       [Test]
@@ -867,7 +868,7 @@ namespace RegressionTests.SMTP
          sim.SendAndReceive("HELO\r\n");
          sim.SendAndReceive("HELO\r\n");
          var result = sim.SendAndReceive("HELO\r\n");
-         CustomAssert.IsTrue(result.Contains("Too many invalid commands"), result);
+         Assert.IsTrue(result.Contains("Too many invalid commands"), result);
       }
 
       /// <summary>
@@ -906,7 +907,7 @@ namespace RegressionTests.SMTP
 
             res = sim.Receive();
 
-            CustomAssert.AreEqual("451 Please try again later.\r\n", res);
+            Assert.AreEqual("451 Please try again later.\r\n", res);
          }
 
          sim.Disconnect();
@@ -931,19 +932,19 @@ namespace RegressionTests.SMTP
 
          string text = builder.ToString();
 
-         SMTPClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "", text);
+         SmtpClientSimulator.StaticSend(senderAccount.Address, recipientAccount.Address, "", text);
 
          // Make sure the recipient did not receive it.
-         TestSetup.AssertRecipientsInDeliveryQueue(0);
+         CustomAsserts.AssertRecipientsInDeliveryQueue(0);
 
          // Check the syntax in the bounce message.
-         string content = POP3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
+         string content = Pop3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
 
          // The bounce message should contain the MIME-version.
-         CustomAssert.IsTrue(content.Contains("MIME-Version: 1.0"));
+         Assert.IsTrue(content.Contains("MIME-Version: 1.0"));
 
          // Lines may not end with space if they are QP-encoded.
-         CustomAssert.IsTrue(content.Contains("  Subject:=20"));
+         Assert.IsTrue(content.Contains("  Subject:=20"));
       }
 
       [Test]
@@ -952,7 +953,7 @@ namespace RegressionTests.SMTP
          Application application = SingletonProvider<TestSetup>.Instance.GetApp();
          _settings.WelcomeSMTP = "HOWDYHO";
 
-         var oSimulator = new SMTPClientSimulator();
+         var oSimulator = new SmtpClientSimulator();
 
          string sWelcomeMessage = oSimulator.GetWelcomeMessage();
 
@@ -972,7 +973,7 @@ namespace RegressionTests.SMTP
          deliveryResults["user4@test4.com"] = 250;
 
          int smtpServerPort = TestSetup.GetNextFreePort();
-         using (var server = new SMTPServerSimulator(1, smtpServerPort))
+         using (var server = new SmtpServerSimulator(1, smtpServerPort))
          {
             _application.Settings.SMTPRelayer = "localhost";
             _application.Settings.SMTPRelayerPort = smtpServerPort;
@@ -980,7 +981,7 @@ namespace RegressionTests.SMTP
             server.AddRecipientResult(deliveryResults);
             server.StartListen();
 
-            var smtpClient = new SMTPClientSimulator();
+            var smtpClient = new SmtpClientSimulator();
 
             var recipients = new List<string>()
                {
@@ -991,13 +992,13 @@ namespace RegressionTests.SMTP
                };
 
             Account senderAccount = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "sender@test.com", "test");
-            CustomAssert.IsTrue(smtpClient.Send(senderAccount.Address, recipients, "Test", "Test message"));
-            TestSetup.AssertRecipientsInDeliveryQueue(0);
+            smtpClient.Send(senderAccount.Address, recipients, "Test", "Test message");
+            CustomAsserts.AssertRecipientsInDeliveryQueue(0);
 
             server.WaitForCompletion();
 
-            CustomAssert.IsTrue(server.MessageData.Contains("Test message"));
-            CustomAssert.AreEqual(deliveryResults.Count, server.RcptTosReceived);
+            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.AreEqual(deliveryResults.Count, server.RcptTosReceived);
          }
       }
    }

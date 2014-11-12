@@ -56,16 +56,16 @@ namespace RegressionTests.POP3
       }
 
       
-      private POP3Server CreateServer()
+      private Pop3ServerSimulator CreateServer()
       {
          return CreateServer(_message);
       }
 
 
-      private POP3Server CreateServer(string message)
+      private Pop3ServerSimulator CreateServer(string message)
       {
          var messages = new List<string> { message };
-         return new POP3Server(1, _serverPort, messages);
+         return new Pop3ServerSimulator(1, _serverPort, messages);
       }
 
 
@@ -95,7 +95,7 @@ namespace RegressionTests.POP3
          fetchAccount.DownloadNow();
          pop3Server.WaitForCompletion();
 
-         POP3ClientSimulator.AssertMessageCount(_account.Address, "test", 2);
+         Pop3ClientSimulator.AssertMessageCount(_account.Address, "test", 2);
       }
 
       [Test]
@@ -106,7 +106,7 @@ namespace RegressionTests.POP3
 
          using (var pop3Server = CreateServer())
          {
-            pop3Server.SendBufferMode = POP3Server.BufferMode.SingleBuffer;
+            pop3Server.SendBufferMode = Pop3ServerSimulator.BufferMode.SingleBuffer;
             pop3Server.StartListen();
 
             // Fetch message
@@ -119,17 +119,17 @@ namespace RegressionTests.POP3
          // Do it again
          using (var pop3Server = CreateServer())
          {
-            pop3Server.SendBufferMode = POP3Server.BufferMode.SingleBuffer;
+            pop3Server.SendBufferMode = Pop3ServerSimulator.BufferMode.SingleBuffer;
             pop3Server.StartListen();
 
             fetchAccount.DownloadNow();
             pop3Server.WaitForCompletion();
             LockHelper.WaitForUnlock(fetchAccount);
 
-            POP3ClientSimulator.AssertMessageCount(_account.Address, "test", 2);
+            Pop3ClientSimulator.AssertMessageCount(_account.Address, "test", 2);
 
-            string downloadedMessage = POP3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-            CustomAssert.IsTrue(downloadedMessage.Contains(_message));
+            string downloadedMessage = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
+            Assert.IsTrue(downloadedMessage.Contains(_message));
          }
       }
 
@@ -141,7 +141,7 @@ namespace RegressionTests.POP3
 
          using (var pop3Server = CreateServer())
          {
-            pop3Server.SendBufferMode = POP3Server.BufferMode.MessageAndTerminatonTogether;
+            pop3Server.SendBufferMode = Pop3ServerSimulator.BufferMode.MessageAndTerminatonTogether;
             pop3Server.StartListen();
 
             fetchAccount = CreateFetchAccount();
@@ -156,16 +156,16 @@ namespace RegressionTests.POP3
             // Do it again
          using (var pop3Server = CreateServer())
          {
-            pop3Server.SendBufferMode = POP3Server.BufferMode.MessageAndTerminatonTogether;
+            pop3Server.SendBufferMode = Pop3ServerSimulator.BufferMode.MessageAndTerminatonTogether;
             pop3Server.StartListen();
 
             fetchAccount.DownloadNow();
             pop3Server.WaitForCompletion();
             LockHelper.WaitForUnlock(fetchAccount);
 
-            POP3ClientSimulator.AssertMessageCount(_account.Address, "test", 2);
-            string downloadedMessage = POP3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-            CustomAssert.IsTrue(downloadedMessage.Contains(_message));
+            Pop3ClientSimulator.AssertMessageCount(_account.Address, "test", 2);
+            string downloadedMessage = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
+            Assert.IsTrue(downloadedMessage.Contains(_message));
          }
       }
 
@@ -193,7 +193,7 @@ namespace RegressionTests.POP3
 
          using (var pop3Server = CreateServer(messageContent))
          {
-            pop3Server.SendBufferMode = POP3Server.BufferMode.SingleBuffer;
+            pop3Server.SendBufferMode = Pop3ServerSimulator.BufferMode.SingleBuffer;
             pop3Server.StartListen();
 
             fetchAccount = CreateFetchAccount();
@@ -207,16 +207,16 @@ namespace RegressionTests.POP3
          // Do it again
          using (var pop3Server = CreateServer(messageContent))
          {
-            pop3Server.SendBufferMode = POP3Server.BufferMode.MessageAndTerminatonTogether;
+            pop3Server.SendBufferMode = Pop3ServerSimulator.BufferMode.MessageAndTerminatonTogether;
             pop3Server.StartListen();
 
             fetchAccount.DownloadNow();
             pop3Server.WaitForCompletion();
             LockHelper.WaitForUnlock(fetchAccount);
 
-            POP3ClientSimulator.AssertMessageCount(_account.Address, "test", 2);
-            string downloadedMessage = POP3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-            CustomAssert.IsTrue(downloadedMessage.Contains(messageContent));
+            Pop3ClientSimulator.AssertMessageCount(_account.Address, "test", 2);
+            string downloadedMessage = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
+            Assert.IsTrue(downloadedMessage.Contains(messageContent));
          }
       }
    }

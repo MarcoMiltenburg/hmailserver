@@ -75,8 +75,8 @@ Source: "System files\dnsapi.dll"; DestDir: "{sys}"; Flags: uninsneveruninstall 
 Source: "System files\ATL\atl70.dll"; DestDir: "{sys}";  Components: server;
 Source: "SQLCE\SSCERuntime-ENU.msi"; Flags: deleteafterinstall ; Excludes: ".svn"; DestDir: "{tmp}"; Components: server;
 Source: ".\Extras\7za.exe"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server;
-Source: "{#HMAILSERVERLIBS}\openssl-1.0.1i\out32dll\libeay32.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server;
-Source: "{#HMAILSERVERLIBS}\openssl-1.0.1i\out32dll\ssleay32.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server;
+Source: "{#HMAILSERVERLIBS}\openssl-1.0.1j\out32dll\libeay32.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server;
+Source: "{#HMAILSERVERLIBS}\openssl-1.0.1j\out32dll\ssleay32.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server;
 Source: "Microsoft.VC120.CRT\*"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server;
 
 ; Main server
@@ -127,7 +127,6 @@ Filename: "{app}\Bin\hMailServer.INI"; Section: "GUILanguages"; Key: "ValidLangu
 Filename: "{app}\Bin\hMailServer.INI"; Section: "Security"; Key: "AdministratorPassword"; String: "{code:GetHashedPassword}"; Flags: createkeyifdoesntexist; Components: server;
 
 [Dirs]
-Name: "{app}\Externals\CA"; Components: server;
 Name: "{app}\Data"; Components: server;
 Name: "{app}\Database"; Components: server;
 Name: "{app}\Logs"; Components: server;

@@ -28,9 +28,17 @@ namespace HM
 
    enum ConnectionState
    {
-      StateDisconnected = 0,
+      StatePendingConnect = 0,
       StateConnected = 1,
-      StatePendingDisconnect = 2
+      StatePendingDisconnect = 2,
+      StateDisconnected = 3
    };
 
+   enum SslTlsVersion
+   {
+      SslVersion30 = 1,
+      TlsVersion10 = 2,
+      TlsVersion11 = 4,
+      TlsVersion12 = 8
+   };
 }

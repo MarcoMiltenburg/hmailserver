@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using NUnit.Framework;
+using RegressionTests.Infrastructure;
 using RegressionTests.Shared;
 using hMailServer;
 
@@ -20,10 +21,10 @@ namespace RegressionTests.Stress
          Application application = SingletonProvider<TestSetup>.Instance.GetApp();
          string deletedMessageText = _settings.ServerMessages.get_ItemByName("MESSAGE_FILE_MISSING").Text;
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
-         SMTPClientSimulator.StaticSend(account.Address, account.Address, "Test", "SampleBody");
+         SmtpClientSimulator.StaticSend(account.Address, account.Address, "Test", "SampleBody");
          IMAPFolder inbox = account.IMAPFolders.get_ItemByName("Inbox");
 
-         TestSetup.AssertFolderMessageCount(inbox, 1);
+         CustomAsserts.AssertFolderMessageCount(inbox, 1);
 
          Messages messages = inbox.Messages;
 
@@ -37,7 +38,7 @@ namespace RegressionTests.Stress
 
          TimeSpan executionTime = DateTime.Now - timeBeforeDelete;
 
-         CustomAssert.Greater(1500, executionTime.TotalMilliseconds);
+         Assert.Greater(1500, executionTime.TotalMilliseconds);
       }
 
       [Test]
@@ -64,11 +65,11 @@ namespace RegressionTests.Stress
          }
 
          watch.Stop();
-         CustomAssert.Greater(10000, watch.ElapsedMilliseconds);
+         Assert.Greater(10000, watch.ElapsedMilliseconds);
 
          // an error log file may have been created. if we're using MySQL,
          // the value may have been silently truncated.
-         TestSetup.AssertDeleteFile(TestSetup.GetErrorLogFileName());
+         CustomAsserts.AssertDeleteFile(LogHandler.GetErrorLogFileName());
       }
 
       [Test]
@@ -94,7 +95,7 @@ namespace RegressionTests.Stress
             sock.IsPortOpen(25);
 
             // make sure that hMailServer reported an error during start up because the ports were blocked.
-            TestSetup.AssertReportedError("Failed to bind to local port.");
+            CustomAsserts.AssertReportedError("Failed to bind to local port.");
          }
 
          // restart hMailServer again. everything is now back to normal.
@@ -112,21 +113,21 @@ namespace RegressionTests.Stress
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
 
-         SMTPClientSimulator.StaticSend(account.Address, account.Address, "Test", "SampleBody");
+         SmtpClientSimulator.StaticSend(account.Address, account.Address, "Test", "SampleBody");
 
          IMAPFolder inbox = account.IMAPFolders.get_ItemByName("Inbox");
 
 
-         TestSetup.AssertFolderMessageCount(inbox, 1);
+         CustomAsserts.AssertFolderMessageCount(inbox, 1);
 
          Message message = inbox.Messages[0];
 
          File.Delete(message.Filename);
 
-         string text = POP3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
-         CustomAssert.IsTrue(text.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)));
+         string text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
+         Assert.IsTrue(text.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)));
 
-         TestSetup.AssertReportedError("Message retrieval failed because message file");
+         CustomAsserts.AssertReportedError("Message retrieval failed because message file");
       }
 
       [Test]
@@ -137,12 +138,12 @@ namespace RegressionTests.Stress
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
 
-         SMTPClientSimulator.StaticSend(account.Address, account.Address, "Test", "SampleBody");
+         SmtpClientSimulator.StaticSend(account.Address, account.Address, "Test", "SampleBody");
 
          IMAPFolder inbox = account.IMAPFolders.get_ItemByName("Inbox");
 
 
-         TestSetup.AssertFolderMessageCount(inbox, 1);
+         CustomAsserts.AssertFolderMessageCount(inbox, 1);
 
          Message message = inbox.Messages[0];
 
@@ -150,9 +151,9 @@ namespace RegressionTests.Stress
          DirectoryInfo parent = dir.Parent.Parent.Parent;
          parent.Delete(true);
 
-         string text = POP3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
-         CustomAssert.IsTrue(text.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)));
-         TestSetup.AssertReportedError("Message retrieval failed because message file");
+         string text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
+         Assert.IsTrue(text.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)));
+         CustomAsserts.AssertReportedError("Message retrieval failed because message file");
       }
 
 
@@ -164,12 +165,12 @@ namespace RegressionTests.Stress
 
          Account account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@test.com", "test");
 
-         SMTPClientSimulator.StaticSend(account.Address, account.Address, "Test", "SampleBody");
+         SmtpClientSimulator.StaticSend(account.Address, account.Address, "Test", "SampleBody");
 
          IMAPFolder inbox = account.IMAPFolders.get_ItemByName("Inbox");
 
 
-         TestSetup.AssertFolderMessageCount(inbox, 1);
+         CustomAsserts.AssertFolderMessageCount(inbox, 1);
 
          Message message = inbox.Messages[0];
 
@@ -177,13 +178,13 @@ namespace RegressionTests.Stress
          DirectoryInfo parent = dir.Parent.Parent.Parent;
          parent.Delete(true);
 
-         var sim = new IMAPClientSimulator();
+         var sim = new ImapClientSimulator();
          sim.ConnectAndLogon(account.Address, "test");
          sim.SelectFolder("INBOX");
          string result = sim.Fetch("1 BODY[1]");
 
-         CustomAssert.IsTrue(result.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)));
-         TestSetup.AssertReportedError("Message retrieval failed because message file");
+         Assert.IsTrue(result.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)));
+         CustomAsserts.AssertReportedError("Message retrieval failed because message file");
       }
    }
 }

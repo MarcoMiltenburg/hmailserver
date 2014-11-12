@@ -55,7 +55,7 @@
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="nunit.framework, Version=2.5.3.9345, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libraries\nunit-2.5.3\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\libraries\nunit-2.6.3\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -69,26 +69,36 @@
     <Compile Include="AntiSpam\Basics.cs" />
     <Compile Include="AntiSpam\SpamAssassin.cs" />
     <Compile Include="API\Basics.cs" />
+    <Compile Include="Infrastructure\CustomAsserts.cs" />
+    <Compile Include="Infrastructure\LogHandler.cs" />
+    <Compile Include="Shared\DeliveryFailedException.cs" />
+    <Compile Include="Shared\SslVersions.cs" />
     <Compile Include="Shared\StringExtensions.cs" />
     <Compile Include="Shared\TcpConnection.cs" />
     <Compile Include="Infrastructure\Delivery.cs" />
     <Compile Include="Infrastructure\DomainServices.cs" />
     <Compile Include="IMAP\Basics.cs" />
-    <Compile Include="Shared\IMAPClientSimulator.cs" />
+    <Compile Include="Shared\ImapClientSimulator.cs" />
     <Compile Include="Infrastructure\IPRanges.cs" />
     <Compile Include="Infrastructure\MainOperations.cs" />
     <Compile Include="Infrastructure\Persistence\Basics.cs" />
     <Compile Include="POP3\Basics.cs" />
-    <Compile Include="Shared\POP3ClientSimulator.cs" />
+    <Compile Include="Shared\Pop3ClientSimulator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Rules\Rules.cs" />
     <Compile Include="Shared\SingletonProvider.cs" />
     <Compile Include="SMTP\Basics.cs" />
+    <Compile Include="SSL\SslTlsVersionTests.cs" />
     <Compile Include="SSL\SslServerTests.cs" />
     <Compile Include="Infrastructure\TCPIP.cs" />
     <Compile Include="Infrastructure\Timeouts.cs" />
     <Compile Include="Shared\TestSetup.cs" />
     <Compile Include="Shared\UtilityServices.cs" />
+    <Compile Include="TestResources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TestResources.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <COMReference Include="hMailServer">
@@ -134,13 +144,12 @@
   <ItemGroup>
     <Compile Include="AntiSpam\DKIM\Signing.cs" />
     <Compile Include="AntiSpam\DKIM\Verification.cs" />
-    <Compile Include="AntiVirus\Basics.cs" />
     <Compile Include="API\Events.cs" />
     <Compile Include="API\Links.cs" />
     <Compile Include="Stress\ContentStressTest.cs" />
     <Compile Include="IMAP\Sort.cs" />
     <Compile Include="POP3\Fetching\Basics.cs" />
-    <Compile Include="Shared\POP3Server.cs" />
+    <Compile Include="Shared\Pop3ServerSimulator.cs" />
     <Compile Include="Security\AutoBan.cs" />
     <Compile Include="Security\SMTPAuthentication.cs" />
     <Compile Include="SMTP\Signatures.cs" />
@@ -175,7 +184,6 @@
     <Compile Include="IMAP\Append.cs" />
     <Compile Include="IMAP\Examine.cs" />
     <Compile Include="IMAP\Fetch.cs" />
-    <Compile Include="Infrastructure\CustomAssert.cs" />
     <Compile Include="Infrastructure\ExceptionHandlerTests.cs" />
     <Compile Include="Infrastructure\Persistence\TCPIPPortTests.cs" />
     <Compile Include="Infrastructure\RetryHelper.cs" />
@@ -185,7 +193,7 @@
     <Compile Include="POP3\Fetching\ExternalAccountSslTests.cs" />
     <Compile Include="POP3\Fetching\LockHelper.cs" />
     <Compile Include="POP3\Fetching\ServerBehaviors.cs" />
-    <Compile Include="Shared\SMTPClientSimulator.cs" />
+    <Compile Include="Shared\SmtpClientSimulator.cs" />
     <Compile Include="Shared\TestTracer.cs" />
     <Compile Include="SMTP\BlockedAttachmentTests.cs" />
     <Compile Include="SMTP\ReceivedHeaders.cs" />
@@ -193,17 +201,12 @@
     <Compile Include="SMTP\Routes.cs" />
     <Compile Include="SMTP\SMTPClientStartTLSTests.cs" />
     <Compile Include="SMTP\SMTPClientTests.cs" />
-    <Compile Include="Shared\SMTPServerSimulator.cs" />
+    <Compile Include="Shared\SmtpServerSimulator.cs" />
     <Compile Include="SSL\SmtpDeliverySslTests.cs" />
     <Compile Include="SSL\SslSetup.cs" />
     <Compile Include="SSL\StartTls\ImapServerTests.cs" />
     <Compile Include="SSL\StartTls\Pop3ServerTests.cs" />
     <Compile Include="SSL\StartTls\SmtpServerTests.cs" />
-    <Compile Include="TestResources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>TestResources.resx</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Messages\MultipartMessageWithNoMainBodyText.txt" />
@@ -213,7 +216,23 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\EmailWith-TextPlainBody-TextPlainContentType.txt" />
     <None Include="Resources\SecuniaBody1.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\EmailWith-TextPlainBody+TextHtmlBody+TextPlainAttachment.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\EmailWith-TextPlainBody-NoContentType.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\EmailWith-TextHtmlBody-TextHtmlContentType.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\EmailWith-TextPlainBody+TextHtmlBody.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\EmailWith-TextPlainBody+TextHtmlBody+TextHtmlAttachment.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

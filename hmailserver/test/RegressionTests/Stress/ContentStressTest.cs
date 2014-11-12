@@ -6,6 +6,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using NUnit.Framework;
+using RegressionTests.Infrastructure;
 using RegressionTests.Shared;
 using hMailServer;
 
@@ -24,8 +25,8 @@ namespace RegressionTests.Stress
             sb.Append("1234567890");
          }
 
-         var sim = new SMTPClientSimulator();
-         CustomAssert.IsFalse(sim.SendRaw("test@test.com", "test@test.com", sb.ToString()));
+         var sim = new SmtpClientSimulator();
+         CustomAsserts.Throws<DeliveryFailedException>(() => sim.SendRaw("test@test.com", "test@test.com", sb.ToString()));
       }
 
 
@@ -59,14 +60,14 @@ namespace RegressionTests.Stress
          string command = "A03 NOOP " + sb;
 
          var socket = new TcpConnection();
-         CustomAssert.IsTrue(socket.Connect(143));
+         Assert.IsTrue(socket.Connect(143));
          socket.Receive();
          socket.Send(command);
 
          try
          {
             string response = socket.Receive();
-            CustomAssert.IsTrue(response.StartsWith("* BYE"));
+            Assert.IsTrue(response.StartsWith("* BYE"));
          }
          catch (System.IO.IOException ex)
          {
@@ -90,14 +91,14 @@ namespace RegressionTests.Stress
          string command = "HELP " + sb;
 
          var socket = new TcpConnection();
-         CustomAssert.IsTrue(socket.Connect(110));
+         Assert.IsTrue(socket.Connect(110));
          socket.Receive();
          socket.Send(command + "\r\n");
 
          try
          {
             string response = socket.Receive();
-            CustomAssert.IsTrue(response.StartsWith("-ERR"));
+            Assert.IsTrue(response.StartsWith("-ERR"));
 
             socket.Disconnect();
          }
@@ -122,12 +123,12 @@ namespace RegressionTests.Stress
          string command = "NOOP " + sb;
 
          var socket = new TcpConnection();
-         CustomAssert.IsTrue(socket.Connect(110));
+         Assert.IsTrue(socket.Connect(110));
          socket.Receive();
          socket.Send(command + "\r\n");
 
          string response = socket.Receive();
-         CustomAssert.IsTrue(response.StartsWith("-ERR Line to long."));
+         Assert.IsTrue(response.StartsWith("-ERR Line to long."));
 
          socket.Disconnect();
       }
@@ -146,14 +147,14 @@ namespace RegressionTests.Stress
          string command = "HELO " + sb;
 
          var socket = new TcpConnection();
-         CustomAssert.IsTrue(socket.Connect(25));
+         Assert.IsTrue(socket.Connect(25));
          socket.Receive();
          socket.Send(command + "\r\n");
 
          try
          {
             string response = socket.Receive();
-            CustomAssert.IsTrue(response.StartsWith("421"));
+            Assert.IsTrue(response.StartsWith("421"));
 
             socket.Disconnect();
          }
@@ -177,12 +178,12 @@ namespace RegressionTests.Stress
          string command = "HELO " + sb;
 
          var socket = new TcpConnection();
-         CustomAssert.IsTrue(socket.Connect(25));
+         Assert.IsTrue(socket.Connect(25));
          socket.Receive();
          socket.Send(command + "\r\n");
 
          string response = socket.Receive();
-         CustomAssert.IsTrue(response.StartsWith("500"));
+         Assert.IsTrue(response.StartsWith("500"));
 
          socket.Disconnect();
       }
@@ -264,15 +265,15 @@ namespace RegressionTests.Stress
          // Save the rule in the database
          oRule.Save();
 
-         var oSMTP = new SMTPClientSimulator();
+         var smtpClientSimulator = new SmtpClientSimulator();
 
          // Spam folder
-         oSMTP.SendRaw("mimetest@test.com", "mimetest@test.com", content);
+         smtpClientSimulator.SendRaw("mimetest@test.com", "mimetest@test.com", content);
 
-         string sContents = POP3ClientSimulator.AssertGetFirstMessageText("mimetest@test.com", "test");
+         string sContents = Pop3ClientSimulator.AssertGetFirstMessageText("mimetest@test.com", "test");
 
-         CustomAssert.IsTrue(sContents.IndexOf("SomeHeader: SomeValue") > 0);
-         CustomAssert.IsTrue(sContents.IndexOf("------=_NextPart_000_000D_01C97C94.33D5E670.ALT--") > 0);
+         Assert.IsTrue(sContents.IndexOf("SomeHeader: SomeValue") > 0);
+         Assert.IsTrue(sContents.IndexOf("------=_NextPart_000_000D_01C97C94.33D5E670.ALT--") > 0);
       }
 
       private void AssertIsConnectionTerminatedException(IOException exception)

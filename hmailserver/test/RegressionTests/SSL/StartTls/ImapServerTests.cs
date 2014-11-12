@@ -29,27 +29,27 @@ namespace RegressionTests.SSL.StartTls
       [Test]
       public void IfStartTlsNotEnabledStartTlsShouldNotBeShownInEhloResponse()
       {
-         var imapSimulator = new IMAPClientSimulator(false, 143);
+         var imapSimulator = new ImapClientSimulator(false, 143);
          imapSimulator.Connect();
          var data = imapSimulator.GetCapabilities();
 
-         CustomAssert.IsFalse(data.Contains("STARTTLS"));
+         Assert.IsFalse(data.Contains("STARTTLS"));
       }
 
       [Test]
       public void IfStartTlsIsEnabledStartTlsShouldBeShownInEhloResponse()
       {
-         var imapSimulator = new IMAPClientSimulator(false, 14302);
+         var imapSimulator = new ImapClientSimulator(false, 14302);
          imapSimulator.Connect();
          var data = imapSimulator.GetCapabilities();
 
-         CustomAssert.IsTrue(data.Contains("STARTTLS"));
+         Assert.IsTrue(data.Contains("STARTTLS"));
       }
 
       [Test]
       public void StlsCommandShouldSwithToTls()
       {
-         var imapSimulator = new IMAPClientSimulator(false, 14302);
+         var imapSimulator = new ImapClientSimulator(false, 14302);
          imapSimulator.Connect();
          var data = imapSimulator.GetCapabilities();
          imapSimulator.SendSingleCommand("A01 STARTTLS");
@@ -64,7 +64,7 @@ namespace RegressionTests.SSL.StartTls
       [Test]
       public void IfStlsRequiredLogonShouldSucceedIfStls()
       {
-         var imapSimulator = new IMAPClientSimulator(false, 14303);
+         var imapSimulator = new ImapClientSimulator(false, 14303);
          imapSimulator.Connect();
          imapSimulator.SendSingleCommand("A01 STARTTLS");
          imapSimulator.Handshake();
@@ -72,19 +72,19 @@ namespace RegressionTests.SSL.StartTls
          // command is sent over TLS.
          imapSimulator.GetCapabilities();
 
-         CustomAssert.IsTrue(imapSimulator.Logon(_account.Address, "test"));
+         Assert.IsTrue(imapSimulator.Logon(_account.Address, "test"));
       }
 
       [Test]
       public void IfStlsRequiredLogonShouldFailIfNoStls()
       {
-         var imapSimulator = new IMAPClientSimulator(false, 14303);
+         var imapSimulator = new ImapClientSimulator(false, 14303);
          imapSimulator.Connect();
 
          string errorMessage;
-         CustomAssert.IsFalse(imapSimulator.Logon(_account.Address, "test", out errorMessage));
+         Assert.IsFalse(imapSimulator.Logon(_account.Address, "test", out errorMessage));
 
-         CustomAssert.IsTrue(errorMessage.Contains("A01 BAD STARTTLS is required."));
+         Assert.IsTrue(errorMessage.Contains("A01 BAD STARTTLS is required."));
       }
 
       [Test]
@@ -94,12 +94,12 @@ namespace RegressionTests.SSL.StartTls
          range.RequireSSLTLSForAuth = true;
          range.Save();
 
-         var imapSimulator = new IMAPClientSimulator(false, 14302);
+         var imapSimulator = new ImapClientSimulator(false, 14302);
          imapSimulator.Connect();
 
          string errorMessage;
-         CustomAssert.IsFalse(imapSimulator.Logon(_account.Address, "test", out errorMessage));
-         CustomAssert.IsTrue(errorMessage.Contains("A01 BAD A SSL/TLS-connection is required for authentication."));
+         Assert.IsFalse(imapSimulator.Logon(_account.Address, "test", out errorMessage));
+         Assert.IsTrue(errorMessage.Contains("A01 BAD A SSL/TLS-connection is required for authentication."));
       }
    }
 }

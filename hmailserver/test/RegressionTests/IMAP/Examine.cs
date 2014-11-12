@@ -14,13 +14,13 @@ namespace RegressionTests.IMAP
       {
          Account oAccount = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "examine@test.com", "test");
 
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("test@test.com", oAccount.Address, "Test", "test"));
-         POP3ClientSimulator.AssertMessageCount(oAccount.Address, "test", 1);
+         SmtpClientSimulator.StaticSend("test@test.com", oAccount.Address, "Test", "test");
+         Pop3ClientSimulator.AssertMessageCount(oAccount.Address, "test", 1);
 
-         var simulator = new IMAPClientSimulator();
+         var simulator = new ImapClientSimulator();
          simulator.ConnectAndLogon(oAccount.Address, "test");
          simulator.ExamineFolder("Inbox");
-         CustomAssert.IsFalse(simulator.SetFlagOnMessage(1, true, @"\Deleted"));
+         Assert.IsFalse(simulator.SetFlagOnMessage(1, true, @"\Deleted"));
       }
 
       [Test]
@@ -30,27 +30,27 @@ namespace RegressionTests.IMAP
       {
          Account oAccount = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "examine@test.com", "test");
 
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("test@test.com", oAccount.Address, "Test", "test"));
-         POP3ClientSimulator.AssertMessageCount(oAccount.Address, "test", 1);
+         SmtpClientSimulator.StaticSend("test@test.com", oAccount.Address, "Test", "test");
+         Pop3ClientSimulator.AssertMessageCount(oAccount.Address, "test", 1);
 
-         var simulator = new IMAPClientSimulator();
+         var simulator = new ImapClientSimulator();
          simulator.ConnectAndLogon(oAccount.Address, "test");
          string result = simulator.ExamineFolder("Inbox");
-         CustomAssert.IsTrue(result.Contains("* 1 RECENT"), result);
+         Assert.IsTrue(result.Contains("* 1 RECENT"), result);
          simulator.Close();
          simulator.Disconnect();
 
-         simulator = new IMAPClientSimulator();
+         simulator = new ImapClientSimulator();
          simulator.ConnectAndLogon(oAccount.Address, "test");
-         CustomAssert.IsTrue(simulator.SelectFolder("Inbox", out result));
-         CustomAssert.IsTrue(result.Contains("* 1 RECENT"), result);
+         Assert.IsTrue(simulator.SelectFolder("Inbox", out result));
+         Assert.IsTrue(result.Contains("* 1 RECENT"), result);
          simulator.Close();
          simulator.Disconnect();
 
-         simulator = new IMAPClientSimulator();
+         simulator = new ImapClientSimulator();
          simulator.ConnectAndLogon(oAccount.Address, "test");
          result = simulator.ExamineFolder("Inbox");
-         CustomAssert.IsTrue(result.Contains("* 0 RECENT"), result);
+         Assert.IsTrue(result.Contains("* 0 RECENT"), result);
          simulator.Close();
          simulator.Disconnect();
       }
@@ -62,10 +62,10 @@ namespace RegressionTests.IMAP
       {
          Account oAccount = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "examine@test.com", "test");
 
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("test@test.com", oAccount.Address, "Test", "test"));
-         POP3ClientSimulator.AssertMessageCount(oAccount.Address, "test", 1);
+         SmtpClientSimulator.StaticSend("test@test.com", oAccount.Address, "Test", "test");
+         Pop3ClientSimulator.AssertMessageCount(oAccount.Address, "test", 1);
 
-         var simulator = new IMAPClientSimulator();
+         var simulator = new ImapClientSimulator();
          simulator.ConnectAndLogon(oAccount.Address, "test");
          simulator.ExamineFolder("Inbox");
          string flags = simulator.GetFlags(1);
@@ -74,9 +74,9 @@ namespace RegressionTests.IMAP
          simulator.Close();
          simulator.Disconnect();
 
-         CustomAssert.AreEqual(flags, flagsAfter);
+         Assert.AreEqual(flags, flagsAfter);
 
-         var secondSimulator = new IMAPClientSimulator();
+         var secondSimulator = new ImapClientSimulator();
          secondSimulator.ConnectAndLogon(oAccount.Address, "test");
          secondSimulator.SelectFolder("Inbox");
          string secondFlags = secondSimulator.GetFlags(1);
@@ -85,7 +85,7 @@ namespace RegressionTests.IMAP
          secondSimulator.Close();
          secondSimulator.Disconnect();
 
-         CustomAssert.AreNotEqual(secondFlags, secondFlagsAfter);
+         Assert.AreNotEqual(secondFlags, secondFlagsAfter);
       }
 
       [Test]
@@ -93,15 +93,15 @@ namespace RegressionTests.IMAP
       {
          Account oAccount = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "examine@test.com", "test");
 
-         var oSimulator = new IMAPClientSimulator();
+         var oSimulator = new ImapClientSimulator();
 
          string sWelcomeMessage = oSimulator.Connect();
          oSimulator.Logon(oAccount.Address, "test");
-         CustomAssert.IsTrue(oSimulator.CreateFolder("TestFolder"));
+         Assert.IsTrue(oSimulator.CreateFolder("TestFolder"));
          string result = oSimulator.ExamineFolder("TestFolder");
 
-         CustomAssert.IsTrue(result.Contains("[PERMANENTFLAGS ()]"), result);
-         CustomAssert.IsTrue(result.Contains("[READ-ONLY]"), result);
+         Assert.IsTrue(result.Contains("[PERMANENTFLAGS ()]"), result);
+         Assert.IsTrue(result.Contains("[READ-ONLY]"), result);
       }
 
       [Test]
@@ -110,22 +110,22 @@ namespace RegressionTests.IMAP
       {
          Account oAccount = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "examine@test.com", "test");
 
-         CustomAssert.IsTrue(SMTPClientSimulator.StaticSend("test@test.com", oAccount.Address, "Test", "test"));
-         POP3ClientSimulator.AssertMessageCount(oAccount.Address, "test", 1);
+         SmtpClientSimulator.StaticSend("test@test.com", oAccount.Address, "Test", "test");
+         Pop3ClientSimulator.AssertMessageCount(oAccount.Address, "test", 1);
 
-         var simulator = new IMAPClientSimulator();
+         var simulator = new ImapClientSimulator();
          simulator.ConnectAndLogon(oAccount.Address, "test");
          simulator.SelectFolder("Inbox");
-         CustomAssert.IsTrue(simulator.SetFlagOnMessage(1, true, @"\Deleted"));
+         Assert.IsTrue(simulator.SetFlagOnMessage(1, true, @"\Deleted"));
 
-         var secondSimulator = new IMAPClientSimulator();
+         var secondSimulator = new ImapClientSimulator();
          secondSimulator.ConnectAndLogon(oAccount.Address, "test");
          string result = secondSimulator.ExamineFolder("INBOX");
-         CustomAssert.IsTrue(result.Contains("1 EXISTS"), result);
-         CustomAssert.IsFalse(secondSimulator.Expunge());
+         Assert.IsTrue(result.Contains("1 EXISTS"), result);
+         Assert.IsFalse(secondSimulator.Expunge());
 
          simulator.SelectFolder("INBOX");
-         CustomAssert.IsTrue(simulator.Expunge());
+         Assert.IsTrue(simulator.Expunge());
 
          simulator.Close();
          secondSimulator.Close();

@@ -7,6 +7,7 @@
 
 #include "../AntiSpam/AntiSpamConfiguration.h"
 #include "../AntiVirus/AntiVirusConfiguration.h"
+#include "../TCPIP/SocketConstants.h"
 
 namespace HM
 {
@@ -155,6 +156,13 @@ namespace HM
       String GetSslCipherList() const;
       void SetSslCipherList(String newValue);
 
+      bool GetSslVersionEnabled(SslTlsVersion version) const;
+      void SetSslVersionEnabled(SslTlsVersion version, bool enabled);
+
+      int GetCrashSimulationMode() const;
+      void SetCrashSimulationMode(int mode);
+
+
       std::shared_ptr<PropertySet> GetSettings() const;
 
       std::shared_ptr<ServerMessages> GetServerMessages() {return server_messages_;}
@@ -180,5 +188,7 @@ namespace HM
       std::shared_ptr<SSLCertificates> ssl_certificates_;
 
       std::shared_ptr<PropertySet> property_set_;
+
+      int crash_simulation_mode_;
    };
 }

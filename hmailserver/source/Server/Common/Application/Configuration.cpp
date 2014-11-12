@@ -41,7 +41,8 @@
 namespace HM
 {
 
-   Configuration::Configuration()
+   Configuration::Configuration() :
+      crash_simulation_mode_(0)
    {
 
    }
@@ -626,6 +627,40 @@ namespace HM
    {
       GetSettings()->SetString(PROPERTY_SSLCIPHERLIST, newValue);
    }
+
+   bool
+   Configuration::GetSslVersionEnabled(SslTlsVersion version) const
+   {
+      return (GetSettings()->GetLong(PROPERTY_SSLVERSIONS) & version) ? true : false;
+   }
+
+   
+   void
+   Configuration::SetSslVersionEnabled(SslTlsVersion version, bool enabled)
+   {
+      int versions = GetSettings()->GetLong(PROPERTY_SSLVERSIONS);
+
+      if (enabled)
+         versions = versions | version;
+      else
+         versions = versions &~version;
+
+      GetSettings()->SetLong(PROPERTY_SSLVERSIONS, versions);
+   }
+
+   int
+   Configuration::GetCrashSimulationMode() const
+   {
+      return crash_simulation_mode_;
+   }
+
+
+   void
+   Configuration::SetCrashSimulationMode(int mode)
+   {
+      crash_simulation_mode_ = mode;
+   }
+
 
    bool 
    Configuration::XMLStore(XNode *pBackupNode)

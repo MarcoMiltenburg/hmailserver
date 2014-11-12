@@ -288,7 +288,7 @@ namespace HM
    String 
    MessageData::GetBody() const
    {
-      std::shared_ptr<MimeBody> pPart = FindPart("text/plain");
+      std::shared_ptr<MimeBody> pPart = GetBodyTextPlainPart();
 
       if (pPart)
       {
@@ -305,7 +305,7 @@ namespace HM
    void
    MessageData::SetBody(const String &sBody)
    {
-      std::shared_ptr<MimeBody> pPart = FindPart("text/plain");
+      std::shared_ptr<MimeBody> pPart = GetBodyTextPlainPart();
 
       if (!pPart)
          pPart = CreatePart("text/plain");
@@ -327,7 +327,7 @@ namespace HM
    String 
    MessageData::GetHTMLBody() const
    {
-      std::shared_ptr<MimeBody> pPart = FindPart("text/html");
+      std::shared_ptr<MimeBody> pPart = GetBodyTextHtmlPart();
 
       if (pPart)
       {
@@ -343,7 +343,7 @@ namespace HM
    void
    MessageData::SetHTMLBody(const String &sNewVal)
    {
-      std::shared_ptr<MimeBody> pHTMLPart = FindPart("text/html");
+      std::shared_ptr<MimeBody> pHTMLPart = GetBodyTextHtmlPart();
 
       if (!pHTMLPart)
       {
@@ -617,6 +617,65 @@ namespace HM
    }
 
    std::shared_ptr<MimeBody>
+   MessageData::GetBodyTextPlainPart() const
+   {
+      String part_type = mime_mail_->GetCleanContentType();
+      if (part_type.IsEmpty())
+         return mime_mail_;
+
+      if (part_type == _T("text/plain"))
+         return mime_mail_;
+
+      return GetViewBodyPart_(0, mime_mail_, "text/plain");
+   }
+
+   std::shared_ptr<MimeBody>
+   MessageData::GetBodyTextHtmlPart() const
+   {
+      String part_type = mime_mail_->GetCleanContentType();
+
+      if (part_type == _T("text/html"))
+         return mime_mail_;
+
+      return GetViewBodyPart_(0, mime_mail_, "text/html");
+   }
+
+   std::shared_ptr<MimeBody> 
+   MessageData::GetViewBodyPart_(int recursion_level, std::shared_ptr<MimeBody> source, const String &requested_content_type) const
+   {
+      if (recursion_level > 10)
+         return nullptr;
+
+      String part_type = source->GetCleanContentType();
+
+      if (part_type.CompareNoCase(requested_content_type) == 0)
+      {
+         // This method should return the body shown to the user in his email client, not attachments which happens to match the requested content type.
+         if (!source->IsAttachment())
+            return source;
+      }
+
+      String main_type = source->GetMainType();
+      if (main_type.CompareNoCase(_T("multipart")) == 0)
+      {
+         std::shared_ptr<MimeBody> sub_part = source->FindFirstPart();
+
+         while (sub_part)
+         {
+            shared_ptr<MimeBody> found = GetViewBodyPart_(recursion_level + 1, sub_part, requested_content_type);
+            if (found)
+               return found;
+
+            sub_part = source->FindNextPart();
+         }
+      }
+
+      return nullptr;
+   }
+
+
+
+   std::shared_ptr<MimeBody>
    MessageData::FindPart(const String &sType) const
    {
       String sPartType = mime_mail_->GetCleanContentType();
@@ -669,7 +728,7 @@ namespace HM
    {
       const HM::String directoryName = HM::FileUtilities::GetFilePath(fileName);
       if (!HM::FileUtilities::Exists(directoryName))
-         HM::FileUtilities::CreateDirectoryRecursive(directoryName);
+         HM::FileUtilities::CreateDirectory(directoryName);
 
       bool result = mime_mail_->SaveAllToFile(fileName);
 

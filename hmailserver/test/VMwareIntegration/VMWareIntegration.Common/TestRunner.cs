@@ -10,7 +10,7 @@ namespace VMwareIntegration.Common
 {
    public class TestRunner
    {
-      private const string NUnitPath = @"..\..\..\..\..\..\libraries\nunit-2.5.3";
+      private const string NUnitPath = @"..\..\..\..\..\..\libraries\nunit-2.6.3";
       
       private TestEnvironment _environment;
       private bool _stopOnError;
@@ -106,7 +106,9 @@ namespace VMwareIntegration.Common
 
             // Collect results.
             string localResultFile = System.IO.Path.GetTempFileName() + ".xml";
+            string localLogFile = System.IO.Path.GetTempFileName() + ".log";
             vm.CopyFileToHost(guestTestPath + "\\TestResult.xml", localResultFile);
+            vm.CopyFileToHost(guestTestPath + "\\TestResult.log", localLogFile);
 
             XmlDocument doc = new XmlDocument();
             doc.Load(localResultFile);
@@ -121,8 +123,8 @@ namespace VMwareIntegration.Common
             }
 
             string resultContent = File.ReadAllText(localResultFile);
-
-            throw new Exception(resultContent);
+            string logContent = File.ReadAllText(localLogFile);
+            throw new Exception(resultContent + "\r\n\r\n"  + logContent);
          }
          catch (Exception e)
          {
